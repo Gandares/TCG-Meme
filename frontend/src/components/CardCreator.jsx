@@ -93,11 +93,11 @@ export function CardCreator({ user, onCreateCard }) {
       <div className="creator-layout">
         <form className="editor-form" onSubmit={handleSubmit}>
           <label>
-            Nombre
+            Nombre *
             <input type="text" maxLength="28" placeholder="Ej. Caballero del WiFi" required value={form.name} onChange={(event) => updateField("name", event.target.value)} />
           </label>
           <label>
-            Rareza
+            Rareza *
             <select value={form.rarity} onChange={(event) => updateField("rarity", event.target.value)}>
               <option>Comun</option>
               <option>Rara</option>
@@ -106,11 +106,11 @@ export function CardCreator({ user, onCreateCard }) {
             </select>
           </label>
           <label>
-            Imagen
+            Imagen *
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleImageChange} />
           </label>
           <label>
-            Descripcion
+            Descripcion *
             <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
           </label>
           <label>
