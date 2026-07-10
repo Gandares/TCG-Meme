@@ -1,0 +1,16 @@
+{
+  "name": "tcg-meme",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "start:backend": "npm --workspace backend start",
+    "check": "npm run check --workspaces --if-present"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
