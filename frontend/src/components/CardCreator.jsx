@@ -118,7 +118,7 @@ export function CardCreator({ user, onCreateCard }) {
             <textarea maxLength="120" rows="3" placeholder="Una frase narrativa o graciosa" value={form.flavor} onChange={(event) => updateField("flavor", event.target.value)} />
           </label>
           <label>
-            Creada por
+            Creada por *
             <input type="text" value={creatorName} readOnly />
           </label>
           {error ? <div className="form-error" role="alert">{error}</div> : null}
