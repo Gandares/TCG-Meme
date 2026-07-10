@@ -333,11 +333,7 @@ function weightedRandomCard(cards) {
     Legendaria: 3,
   };
   const candidates = cards.flatMap((card) => {
-    const variants = [withCardVariant(card, "normal")];
-    if (nextRarity(card.rarity)) {
-      variants.push(withCardVariant(card, "holo"));
-    }
-    return variants;
+    return [withCardVariant(card, "normal"), withCardVariant(card, "holo")];
   });
   const available = candidates.flatMap((card) => Array(weights[card.displayRarity] || 10).fill(card));
   return available[Math.floor(Math.random() * available.length)];
@@ -348,11 +344,11 @@ function collectionKey(cardId, variant = "normal") {
 }
 
 function withCardVariant(card, variant = "normal") {
-  const normalizedVariant = variant === "holo" && nextRarity(card.rarity) ? "holo" : "normal";
+  const normalizedVariant = variant === "holo" ? "holo" : "normal";
   return {
     ...card,
     variant: normalizedVariant,
-    displayRarity: normalizedVariant === "holo" ? nextRarity(card.rarity) : card.rarity,
+    displayRarity: normalizedVariant === "holo" ? nextRarity(card.rarity) || card.rarity : card.rarity,
   };
 }
 

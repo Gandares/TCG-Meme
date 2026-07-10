@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { assetUrl } from "../api/cards";
-import { effectiveRarity, getCollectionCount, initials, nextRarity, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
+import { effectiveRarity, getCollectionCount, initials, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
 
 export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
-  const defaultVariant = variant === "holo" && nextRarity(card.rarity) ? "holo" : "normal";
+  const defaultVariant = variant === "holo" ? "holo" : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
   const availableVariants = useMemo(() => {
     if (!collection) {
@@ -11,9 +11,6 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
     }
 
     return ["normal", "holo"].filter((item) => {
-      if (item === "holo" && !nextRarity(card.rarity)) {
-        return false;
-      }
       return getCollectionCount(collection, card.id, item) > 0;
     });
   }, [card.id, card.rarity, collection, defaultVariant]);

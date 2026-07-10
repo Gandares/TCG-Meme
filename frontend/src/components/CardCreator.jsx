@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card } from "./Card";
-import { nextRarity, resizeImageFile, withCardVariant } from "../utils/cards";
+import { resizeImageFile, withCardVariant } from "../utils/cards";
 
 const emptyForm = {
   name: "",
@@ -18,10 +18,8 @@ export function CardCreator({ onCreateCard }) {
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const canPreviewHolo = Boolean(nextRarity(form.rarity));
-
   const previewCard = useMemo(() => {
-    const variant = previewVariant === "holo" && nextRarity(form.rarity) ? "holo" : "normal";
+    const variant = previewVariant === "holo" ? "holo" : "normal";
     return withCardVariant(
       {
       id: "preview",
@@ -121,13 +119,12 @@ export function CardCreator({ onCreateCard }) {
         <div className="preview-panel">
           <h3>Vista previa</h3>
           <div className="variant-toggle" role="group" aria-label="Version de vista previa">
-            <button className={`filter-button ${previewVariant === "normal" || !canPreviewHolo ? "active" : ""}`} type="button" onClick={() => setPreviewVariant("normal")}>
+            <button className={`filter-button ${previewVariant === "normal" ? "active" : ""}`} type="button" onClick={() => setPreviewVariant("normal")}>
               Normal
             </button>
             <button
-              className={`filter-button ${previewVariant === "holo" && canPreviewHolo ? "active" : ""}`}
+              className={`filter-button ${previewVariant === "holo" ? "active" : ""}`}
               type="button"
-              disabled={!canPreviewHolo}
               onClick={() => setPreviewVariant("holo")}
             >
               Holo

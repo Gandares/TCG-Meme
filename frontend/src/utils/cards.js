@@ -29,7 +29,7 @@ export function effectiveRarity(card, variant = "normal") {
 }
 
 export function withCardVariant(card, variant = "normal") {
-  const normalizedVariant = variant === "holo" && nextRarity(card.rarity) ? "holo" : "normal";
+  const normalizedVariant = variant === "holo" ? "holo" : "normal";
   return {
     ...card,
     variant: normalizedVariant,
