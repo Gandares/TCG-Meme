@@ -87,8 +87,8 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
           onClick={handlePackClick}
         >
           <span className="pack-flap" />
+          <span className="pack-image" />
           <span className="pack-rim" />
-          <span className="pack-title">MEME PACK</span>
           <span className="pack-shine" />
           <span className="pack-count">5 cartas</span>
         </button>
