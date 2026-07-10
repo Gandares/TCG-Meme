@@ -30,9 +30,9 @@ export function Card({ card, count, locked = false }) {
     return (
       <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
         <div className="card-back-pattern" />
-        <div className="card-back-mark">?</div>
+        <div className="card-back-mark" aria-hidden="true">✦</div>
         <div className="card-back-copy">
-          <strong>Carta bloqueada</strong>
+          <strong>Carta oculta</strong>
           <span>No desbloqueada</span>
         </div>
       </article>

@@ -545,12 +545,12 @@ button {
   place-items: center;
   grid-template-rows: 1fr auto 1fr;
   background:
-    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.13), transparent 26%),
-    linear-gradient(145deg, rgba(232, 79, 61, 0.2), transparent 28%),
-    linear-gradient(315deg, rgba(92, 168, 232, 0.22), transparent 34%),
-    #121416;
-  color: rgba(255, 255, 255, 0.84);
-  opacity: 0.86;
+    radial-gradient(circle at 50% 44%, rgba(247, 196, 92, 0.22), transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(80, 46, 150, 0.4), transparent 38%),
+    linear-gradient(145deg, rgba(37, 23, 68, 0.94), rgba(13, 18, 28, 0.98) 48%, rgba(48, 31, 18, 0.94)),
+    #111315;
+  color: rgba(255, 245, 215, 0.92);
+  opacity: 0.94;
 }
 
 .card-locked::before,
@@ -564,31 +564,41 @@ button {
   content: "";
   z-index: 1;
   margin: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(247, 210, 129, 0.44);
   border-radius: 6px;
-  box-shadow: inset 0 0 0 0.45rem rgba(0, 0, 0, 0.16);
+  box-shadow:
+    inset 0 0 0 0.28rem rgba(0, 0, 0, 0.2),
+    inset 0 0 0 0.36rem rgba(247, 210, 129, 0.12),
+    inset 0 0 2.6rem rgba(83, 52, 142, 0.44);
 }
 
 .card-back-pattern {
   z-index: 0;
   background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 0.45rem, transparent 0.45rem 0.9rem),
-    radial-gradient(circle at 50% 50%, transparent 0 20%, rgba(255, 255, 255, 0.07) 20% 21%, transparent 21% 34%, rgba(255, 255, 255, 0.06) 34% 35%, transparent 35%);
+    radial-gradient(circle at 50% 50%, transparent 0 19%, rgba(247, 210, 129, 0.24) 19% 20%, transparent 20% 31%, rgba(247, 210, 129, 0.18) 31% 32%, transparent 32% 43%, rgba(247, 210, 129, 0.12) 43% 44%, transparent 44%),
+    conic-gradient(from 45deg, transparent 0 7%, rgba(247, 210, 129, 0.14) 8% 9%, transparent 10% 22%, rgba(157, 107, 255, 0.16) 23% 24%, transparent 25% 40%, rgba(247, 210, 129, 0.12) 41% 42%, transparent 43% 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.035) 0 0.35rem, transparent 0.35rem 0.9rem);
 }
 
 .card-back-mark {
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 5.5rem;
+  width: 6.25rem;
   aspect-ratio: 1;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(247, 210, 129, 0.58);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
-  font-size: 3.5rem;
+  background:
+    radial-gradient(circle, rgba(247, 210, 129, 0.28), rgba(65, 44, 112, 0.28) 48%, rgba(0, 0, 0, 0.18)),
+    conic-gradient(from 0deg, rgba(247, 210, 129, 0.2), transparent 18%, rgba(157, 107, 255, 0.24), transparent 52%, rgba(247, 210, 129, 0.2));
+  color: #ffe5a3;
+  font-size: 3rem;
   font-weight: 900;
   line-height: 1;
-  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+  box-shadow:
+    0 0 1.6rem rgba(247, 210, 129, 0.18),
+    inset 0 0 1.4rem rgba(0, 0, 0, 0.42);
+  text-shadow: 0 0 1rem rgba(247, 210, 129, 0.62);
 }
 
 .card-back-copy {
@@ -605,11 +615,14 @@ button {
 }
 
 .card-back-copy strong {
+  color: #ffe5a3;
   font-size: 0.9rem;
+  letter-spacing: 0.06rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.82);
 }
 
 .card-back-copy span {
-  color: var(--muted);
+  color: rgba(255, 245, 215, 0.68);
   font-size: 0.72rem;
   font-weight: 900;
 }
