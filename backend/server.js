@@ -76,15 +76,11 @@ const server = http.createServer(async (request, response) => {
 
   if (requestUrl.pathname === "/api/cards" && request.method === "POST") {
     try {
-      const user = getOptionalUser(request);
       const payload = await readRequestBody(request);
       const card = createCard(payload);
       const cards = readCards();
       cards.unshift(card);
       writeCards(cards);
-      if (user) {
-        addCardsToUserCollection(user.username, [card.id]);
-      }
       sendJson(response, card, 201);
     } catch (error) {
       sendJson(response, { error: error.message || "No se pudo guardar la carta." }, 400);
@@ -274,14 +270,6 @@ function requireUser(request) {
   return user;
 }
 
-function getOptionalUser(request) {
-  try {
-    return requireUser(request);
-  } catch {
-    return null;
-  }
-}
-
 function updateUser(username, updater) {
   const users = readUsers();
   const index = users.findIndex((user) => user.username === username);
@@ -291,16 +279,6 @@ function updateUser(username, updater) {
   users[index] = updater(users[index]);
   writeUsers(users);
   return users[index];
-}
-
-function addCardsToUserCollection(username, cardIds) {
-  return updateUser(username, (user) => {
-    const collection = { ...(user.collection || {}) };
-    for (const cardId of cardIds) {
-      collection[cardId] = (Number(collection[cardId]) || 0) + 1;
-    }
-    return { ...user, collection };
-  });
 }
 
 function openPackForUser(username) {

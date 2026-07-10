@@ -89,7 +89,6 @@ export default function App() {
   async function handleCreateCard(card) {
     const savedCard = await createCard(card, auth.token);
     setCards((currentCards) => [savedCard, ...currentCards]);
-    setCollection((current) => ({ ...current, [savedCard.id]: (Number(current[savedCard.id]) || 0) + 1 }));
     setActiveView("packs");
   }
 
