@@ -76,8 +76,9 @@ const server = http.createServer(async (request, response) => {
 
   if (requestUrl.pathname === "/api/cards" && request.method === "POST") {
     try {
+      const user = requireUser(request);
       const payload = await readRequestBody(request);
-      const card = createCard(payload);
+      const card = createCard(payload, user);
       const cards = readCards();
       cards.unshift(card);
       writeCards(cards);
@@ -456,17 +457,29 @@ function parseMultipart(buffer, boundary) {
   return payload;
 }
 
-function createCard(payload) {
+function createCard(payload, user) {
   const id = createId();
+  const name = cleanText(payload.name, 28);
+  const description = cleanText(payload.description, 130);
+  if (!name) {
+    throw new Error("El titulo es obligatorio.");
+  }
+  if (!payload.image) {
+    throw new Error("La imagen es obligatoria.");
+  }
+  if (!description) {
+    throw new Error("La descripcion es obligatoria.");
+  }
+
   return {
     id,
-    name: cleanText(payload.name, 28) || "Nueva Carta",
+    name,
     type: "",
     rarity: normalizeRarity(payload.rarity),
     image: saveImage(id, payload.image),
-    description: cleanText(payload.description, 130),
+    description,
     flavor: cleanText(payload.flavor, 120),
-    author: cleanText(payload.author, 28) || "Creador anonimo",
+    author: cleanText(user?.username, 28) || "Creador anonimo",
   };
 }
 
@@ -561,5 +574,5 @@ function sendJson(response, data, status = 200) {
 function setCorsHeaders(response) {
   response.setHeader("Access-Control-Allow-Origin", "*");
   response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }

@@ -9,31 +9,31 @@ const emptyForm = {
   imageFile: null,
   description: "",
   flavor: "",
-  author: "",
 };
 
-export function CardCreator({ onCreateCard }) {
+export function CardCreator({ user, onCreateCard }) {
   const [form, setForm] = useState(emptyForm);
   const [previewVariant, setPreviewVariant] = useState("normal");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const creatorName = user?.username || "";
 
   const previewCard = useMemo(() => {
     const variant = previewVariant === "holo" ? "holo" : "normal";
     return withCardVariant(
       {
-      id: "preview",
-      name: form.name || "Nueva Carta",
-      type: "",
-      rarity: form.rarity,
-      image: form.image,
-      description: form.description || "Descripcion de la carta.",
-      flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
-      author: form.author || "Creador anonimo",
+        id: "preview",
+        name: form.name || "Nueva Carta",
+        type: "",
+        rarity: form.rarity,
+        image: form.image,
+        description: form.description || "Descripcion de la carta.",
+        flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
+        author: creatorName || "Creador anonimo",
       },
       variant,
     );
-  }, [form, previewVariant]);
+  }, [creatorName, form, previewVariant]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -48,6 +48,17 @@ export function CardCreator({ onCreateCard }) {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+
+    if (!form.imageFile) {
+      setError("La imagen es obligatoria.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setError("La descripcion es obligatoria.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -58,7 +69,7 @@ export function CardCreator({ onCreateCard }) {
         imageFile: form.imageFile,
         description: form.description.trim(),
         flavor: form.flavor.trim(),
-        author: form.author.trim(),
+        author: creatorName,
       });
       event.currentTarget.reset();
       setForm(emptyForm);
@@ -96,11 +107,11 @@ export function CardCreator({ onCreateCard }) {
           </label>
           <label>
             Imagen
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImageChange} />
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleImageChange} />
           </label>
           <label>
             Descripcion
-            <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" value={form.description} onChange={(event) => updateField("description", event.target.value)} />
+            <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
           </label>
           <label>
             Flavour text
@@ -108,7 +119,7 @@ export function CardCreator({ onCreateCard }) {
           </label>
           <label>
             Creada por
-            <input type="text" maxLength="28" placeholder="Tu nombre o alias" value={form.author} onChange={(event) => updateField("author", event.target.value)} />
+            <input type="text" value={creatorName} readOnly />
           </label>
           {error ? <div className="form-error" role="alert">{error}</div> : null}
           <div className="form-actions">

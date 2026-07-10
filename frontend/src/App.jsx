@@ -105,7 +105,7 @@ export default function App() {
           <PackOpening cards={cards} pulls={pulls} recentPulls={recentPulls} onOpenPack={handleOpenPack} onDismissReveal={() => setPulls([])} />
         ) : null}
         {activeView === "collection" ? <CollectionView cards={cards} collection={collection} /> : null}
-        {activeView === "creator" ? <CardCreator onCreateCard={handleCreateCard} /> : null}
+        {activeView === "creator" ? <CardCreator user={auth.user} onCreateCard={handleCreateCard} /> : null}
       </main>
     </div>
   );
