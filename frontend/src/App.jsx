@@ -102,7 +102,7 @@ export default function App() {
       <main className="main-content">
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         {activeView === "packs" ? (
-          <PackOpening cards={cards} pulls={pulls} recentPulls={recentPulls} onOpenPack={handleOpenPack} />
+          <PackOpening cards={cards} pulls={pulls} recentPulls={recentPulls} onOpenPack={handleOpenPack} onDismissReveal={() => setPulls([])} />
         ) : null}
         {activeView === "collection" ? <CollectionView cards={cards} collection={collection} /> : null}
         {activeView === "creator" ? <CardCreator onCreateCard={handleCreateCard} /> : null}

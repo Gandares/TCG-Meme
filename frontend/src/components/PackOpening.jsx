@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
 
-export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
+export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDismissReveal }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -21,6 +21,8 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
 
     function dismissReveal() {
       setIsRevealVisible(false);
+      setSelectedCard(null);
+      onDismissReveal?.();
     }
 
     window.addEventListener("click", dismissReveal);
