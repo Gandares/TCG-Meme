@@ -10,11 +10,6 @@ dist/
 .codex/
 .agents/
 
-/app.js
-/index.html
-/server.js
-/styles.css
-
 data/card.json
 data/users.json
 assets/uploads/
