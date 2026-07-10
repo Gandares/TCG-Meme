@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
+import { CardDetailModal } from "./CardDetailModal";
 
 export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
   const canOpen = cards.length > 0;
 
   useEffect(() => {
@@ -13,7 +15,7 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
   }, [pulls]);
 
   useEffect(() => {
-    if (!isRevealVisible) {
+    if (!isRevealVisible || selectedCard) {
       return undefined;
     }
 
@@ -28,7 +30,22 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
       window.removeEventListener("click", dismissReveal);
       window.removeEventListener("keydown", dismissReveal);
     };
-  }, [isRevealVisible]);
+  }, [isRevealVisible, selectedCard]);
+
+  useEffect(() => {
+    if (!selectedCard) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setSelectedCard(null);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedCard]);
 
   async function handlePackClick() {
     if (!canOpen || isOpening) {
@@ -43,6 +60,10 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
         setIsOpening(false);
       }
     }, 760);
+  }
+
+  function countInCurrentPack(cardId) {
+    return pulls.filter((card) => card.id === cardId).length || 1;
   }
 
   return (
@@ -94,11 +115,23 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack }) {
           <div className="pack-reveal-grid" aria-live="polite">
             {pulls.map((card, index) => (
               <div className="deal-card reveal-card" style={{ animationDelay: `${index * 90}ms` }} key={`${card.id}-${index}`}>
-                <Card card={card} />
+                <button
+                  className="card-button"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedCard(card);
+                  }}
+                >
+                  <Card card={card} />
+                </button>
               </div>
             ))}
           </div>
         </div>
+      ) : null}
+      {selectedCard ? (
+        <CardDetailModal card={selectedCard} count={countInCurrentPack(selectedCard.id)} onClose={() => setSelectedCard(null)} />
       ) : null}
     </section>
   );
