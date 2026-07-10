@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Card } from "./Card";
-import { resizeImageFile } from "../utils/cards";
+import { nextRarity, resizeImageFile, withCardVariant } from "../utils/cards";
 
 const emptyForm = {
   name: "",
@@ -14,11 +14,16 @@ const emptyForm = {
 
 export function CardCreator({ onCreateCard }) {
   const [form, setForm] = useState(emptyForm);
+  const [previewVariant, setPreviewVariant] = useState("normal");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const previewCard = useMemo(
-    () => ({
+  const canPreviewHolo = Boolean(nextRarity(form.rarity));
+
+  const previewCard = useMemo(() => {
+    const variant = previewVariant === "holo" && nextRarity(form.rarity) ? "holo" : "normal";
+    return withCardVariant(
+      {
       id: "preview",
       name: form.name || "Nueva Carta",
       type: "",
@@ -27,9 +32,10 @@ export function CardCreator({ onCreateCard }) {
       description: form.description || "Descripcion de la carta.",
       flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
       author: form.author || "Creador anonimo",
-    }),
-    [form],
-  );
+      },
+      variant,
+    );
+  }, [form, previewVariant]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -58,6 +64,7 @@ export function CardCreator({ onCreateCard }) {
       });
       event.currentTarget.reset();
       setForm(emptyForm);
+      setPreviewVariant("normal");
     } catch (saveError) {
       setError(saveError.message || "No se pudo guardar la carta.");
     } finally {
@@ -113,6 +120,19 @@ export function CardCreator({ onCreateCard }) {
 
         <div className="preview-panel">
           <h3>Vista previa</h3>
+          <div className="variant-toggle" role="group" aria-label="Version de vista previa">
+            <button className={`filter-button ${previewVariant === "normal" || !canPreviewHolo ? "active" : ""}`} type="button" onClick={() => setPreviewVariant("normal")}>
+              Normal
+            </button>
+            <button
+              className={`filter-button ${previewVariant === "holo" && canPreviewHolo ? "active" : ""}`}
+              type="button"
+              disabled={!canPreviewHolo}
+              onClick={() => setPreviewVariant("holo")}
+            >
+              Holo
+            </button>
+          </div>
           <div id="previewCard">
             <Card card={previewCard} />
           </div>

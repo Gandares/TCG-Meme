@@ -592,7 +592,8 @@ button {
 }
 
 .card-art,
-.card-vignette {
+.card-vignette,
+.holo-layer {
   position: absolute;
   inset: 0;
 }
@@ -621,6 +622,35 @@ button {
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.08) 35%, rgba(0, 0, 0, 0.82)),
     linear-gradient(90deg, rgba(0, 0, 0, 0.32), transparent 30%, rgba(0, 0, 0, 0.28));
+}
+
+.card-holo {
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.28),
+    0 0 32px rgba(242, 201, 76, 0.16);
+}
+
+.holo-layer {
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.48;
+  background:
+    linear-gradient(115deg, transparent 0 18%, rgba(255, 255, 255, 0.52) 22%, transparent 28% 48%, rgba(92, 168, 232, 0.52) 54%, transparent 62%),
+    repeating-linear-gradient(135deg, rgba(255, 82, 183, 0.18) 0 0.35rem, rgba(92, 168, 232, 0.16) 0.35rem 0.7rem, rgba(242, 201, 76, 0.16) 0.7rem 1.05rem);
+}
+
+.holo-badge {
+  flex: 0 0 auto;
+  padding: 0.22rem 0.42rem;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.34);
+  color: #fff6b7;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
 }
 
 .tcg-card::after {
@@ -875,6 +905,17 @@ button {
   background: var(--panel-soft);
 }
 
+.variant-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-variant-toggle {
+  margin-bottom: 0;
+}
+
 .detail-list {
   display: grid;
   gap: 0.85rem;
@@ -910,6 +951,11 @@ button {
 .filter-button {
   min-height: 2.35rem;
   padding: 0 0.8rem;
+}
+
+.filter-button:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .search-input,

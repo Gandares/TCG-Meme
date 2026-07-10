@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
+import { withCardVariant } from "../utils/cards";
 
 export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDismissReveal }) {
   const [isOpening, setIsOpening] = useState(false);
@@ -64,8 +65,8 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
     }, 760);
   }
 
-  function countInCurrentPack(cardId) {
-    return pulls.filter((card) => card.id === cardId).length || 1;
+  function countInCurrentPack(cardId, variant = "normal") {
+    return pulls.filter((card) => card.id === cardId && (card.variant || "normal") === variant).length || 1;
   }
 
   return (
@@ -102,7 +103,7 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
         {recentPulls.length ? (
           <div className="recent-pulls-track" aria-live="polite">
             {recentPulls.map((card, index) => (
-              <div className="recent-pull-card" key={`${card.id}-${index}`}>
+              <div className="recent-pull-card" key={`${card.id}-${card.variant || "normal"}-${index}`}>
                 <Card card={card} />
               </div>
             ))}
@@ -115,25 +116,33 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
       {isRevealVisible ? (
         <div className="pack-reveal-overlay" role="dialog" aria-modal="true" aria-label="Cartas abiertas">
           <div className="pack-reveal-grid" aria-live="polite">
-            {pulls.map((card, index) => (
-              <div className="deal-card reveal-card" style={{ animationDelay: `${index * 90}ms` }} key={`${card.id}-${index}`}>
+            {pulls.map((card, index) => {
+              const displayCard = withCardVariant(card, card.variant || "normal");
+              return (
+              <div className="deal-card reveal-card" style={{ animationDelay: `${index * 90}ms` }} key={`${card.id}-${displayCard.variant}-${index}`}>
                 <button
                   className="card-button"
                   type="button"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setSelectedCard(card);
+                    setSelectedCard(displayCard);
                   }}
                 >
-                  <Card card={card} />
+                  <Card card={displayCard} />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : null}
       {selectedCard ? (
-        <CardDetailModal card={selectedCard} count={countInCurrentPack(selectedCard.id)} onClose={() => setSelectedCard(null)} />
+        <CardDetailModal
+          card={selectedCard}
+          variant={selectedCard.variant || "normal"}
+          count={countInCurrentPack(selectedCard.id, selectedCard.variant || "normal")}
+          onClose={() => setSelectedCard(null)}
+        />
       ) : null}
     </section>
   );

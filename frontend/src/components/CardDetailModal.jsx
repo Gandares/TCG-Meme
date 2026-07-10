@@ -1,8 +1,30 @@
+import { useEffect, useMemo, useState } from "react";
 import { assetUrl } from "../api/cards";
-import { initials, rarityClass } from "../utils/cards";
+import { effectiveRarity, getCollectionCount, initials, nextRarity, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
 
-export function CardDetailModal({ card, count, onClose }) {
-  const image = assetUrl(card.image);
+export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
+  const defaultVariant = variant === "holo" && nextRarity(card.rarity) ? "holo" : "normal";
+  const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
+  const availableVariants = useMemo(() => {
+    if (!collection) {
+      return [defaultVariant];
+    }
+
+    return ["normal", "holo"].filter((item) => {
+      if (item === "holo" && !nextRarity(card.rarity)) {
+        return false;
+      }
+      return getCollectionCount(collection, card.id, item) > 0;
+    });
+  }, [card.id, card.rarity, collection, defaultVariant]);
+  const displayVariant = availableVariants.includes(selectedVariant) ? selectedVariant : availableVariants[0] || defaultVariant;
+  const displayCard = withCardVariant(card, displayVariant);
+  const image = assetUrl(displayCard.image);
+  const displayCount = collection ? getCollectionCount(collection, card.id, displayVariant) : count;
+
+  useEffect(() => {
+    setSelectedVariant(defaultVariant);
+  }, [defaultVariant, card.id]);
 
   function handleTilt(event) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -27,7 +49,7 @@ export function CardDetailModal({ card, count, onClose }) {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
-        className={`card-detail ${rarityClass(card.rarity)}`}
+        className={`card-detail ${rarityClass(effectiveRarity(card, displayVariant))} ${displayVariant === "holo" ? "detail-holo" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cardDetailTitle"
@@ -37,18 +59,36 @@ export function CardDetailModal({ card, count, onClose }) {
           x
         </button>
 
-        <div className="detail-art tilt-card" onPointerMove={handleTilt} onPointerLeave={resetTilt}>
-          {image ? <img src={image} alt={card.name} /> : <span>{initials(card.name)}</span>}
+        <div className={`detail-art tilt-card ${displayVariant === "holo" ? "card-holo" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+          {image ? <img src={image} alt={displayCard.name} /> : <span>{initials(displayCard.name)}</span>}
+          {displayVariant === "holo" ? <div className="holo-layer" /> : null}
         </div>
 
         <div className="detail-content">
           <div className="detail-heading">
             <div>
               <h2 id="cardDetailTitle">{card.name}</h2>
-              <p className={`detail-rarity ${rarityClass(card.rarity)}`}>{card.rarity}</p>
+              <p className={`detail-rarity ${rarityClass(displayCard.displayRarity)}`}>
+                {displayCard.displayRarity}{displayVariant === "holo" ? " Holo" : ""}
+              </p>
             </div>
-            <strong>x{count || 0}</strong>
+            <strong>x{displayCount || 0}</strong>
           </div>
+
+          {availableVariants.length > 1 ? (
+            <div className="variant-toggle detail-variant-toggle" role="group" aria-label="Version de carta">
+              {availableVariants.map((item) => (
+                <button
+                  className={`filter-button ${displayVariant === item ? "active" : ""}`}
+                  type="button"
+                  key={item}
+                  onClick={() => setSelectedVariant(item)}
+                >
+                  {variantLabel(item)}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <dl className="detail-list">
             <div>

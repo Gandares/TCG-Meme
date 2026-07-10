@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
-import { compareByRarity } from "../utils/cards";
+import { compareByRarity, getCollectionCount, getOwnedVariantCount, withCardVariant } from "../utils/cards";
 
 const rarities = ["all", "Comun", "Rara", "Epica", "Legendaria"];
 
@@ -68,8 +68,11 @@ export function CollectionView({ cards, collection }) {
       <div className="card-grid">
         {filteredCards.length ? (
           filteredCards.map((card) => {
-            const count = Number(collection[card.id]) || 0;
-            const isLocked = count <= 0;
+            const normalCount = getCollectionCount(collection, card.id, "normal");
+            const holoCount = getCollectionCount(collection, card.id, "holo");
+            const ownedCount = normalCount + holoCount;
+            const previewVariant = normalCount > 0 ? "normal" : holoCount > 0 ? "holo" : "normal";
+            const isLocked = ownedCount <= 0;
 
             return (
               <button
@@ -79,7 +82,7 @@ export function CollectionView({ cards, collection }) {
                 disabled={isLocked}
                 onClick={() => setSelectedCard(card)}
               >
-                <Card card={card} count={count} locked={isLocked} />
+                <Card card={withCardVariant(card, previewVariant)} count={ownedCount} locked={isLocked} />
               </button>
             );
           })
@@ -87,7 +90,14 @@ export function CollectionView({ cards, collection }) {
           <div className="empty-state">Todavia no hay cartas que coincidan.</div>
         )}
       </div>
-      {selectedCard ? <CardDetailModal card={selectedCard} count={collection[selectedCard.id]} onClose={() => setSelectedCard(null)} /> : null}
+      {selectedCard ? (
+        <CardDetailModal
+          card={selectedCard}
+          count={getOwnedVariantCount(collection, selectedCard.id)}
+          collection={collection}
+          onClose={() => setSelectedCard(null)}
+        />
+      ) : null}
     </section>
   );
 }

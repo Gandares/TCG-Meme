@@ -1,8 +1,10 @@
 import { assetUrl } from "../api/cards";
-import { initials, rarityClass } from "../utils/cards";
+import { effectiveRarity, initials, rarityClass } from "../utils/cards";
 
 export function Card({ card, count, locked = false }) {
   const image = assetUrl(card.image);
+  const variant = card.variant === "holo" ? "holo" : "normal";
+  const displayRarity = card.displayRarity || effectiveRarity(card, variant);
 
   function handleTilt(event) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -26,7 +28,7 @@ export function Card({ card, count, locked = false }) {
 
   if (locked) {
     return (
-      <article className={`tcg-card card-locked tilt-card ${rarityClass(card.rarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+      <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
         <div className="card-back-pattern" />
         <div className="card-back-mark">?</div>
         <div className="card-back-copy">
@@ -38,13 +40,15 @@ export function Card({ card, count, locked = false }) {
   }
 
   return (
-    <article className={`tcg-card tilt-card ${rarityClass(card.rarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+    <article className={`tcg-card tilt-card ${rarityClass(displayRarity)} ${variant === "holo" ? "card-holo" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
       <div className="card-art">
         {image ? <img src={image} alt={card.name} loading="lazy" /> : initials(card.name)}
       </div>
+      {variant === "holo" ? <div className="holo-layer" /> : null}
       <div className="card-vignette" />
       <div className="card-topline">
         <strong>{card.name}</strong>
+        {variant === "holo" ? <span className="holo-badge">Holo</span> : null}
       </div>
       <div className="card-body">
         <p>{card.description || "Sin descripcion."}</p>

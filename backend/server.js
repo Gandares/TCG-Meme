@@ -290,9 +290,13 @@ function openPackForUser(username) {
   const updatedUser = updateUser(username, (user) => {
     const collection = { ...(user.collection || {}) };
     for (const card of pulls) {
-      collection[card.id] = (Number(collection[card.id]) || 0) + 1;
+      const key = collectionKey(card.id, card.variant);
+      collection[key] = (Number(collection[key]) || 0) + 1;
     }
-    const recentPulls = [...pulls.map((card) => card.id), ...(user.recentPulls || [])].slice(0, 10);
+    const recentPulls = [
+      ...pulls.map((card) => ({ id: card.id, variant: card.variant || "normal" })),
+      ...(user.recentPulls || []),
+    ].slice(0, 10);
     return {
       ...user,
       collection,
@@ -311,7 +315,14 @@ function openPackForUser(username) {
 
 function resolveRecentPulls(cardIds) {
   const cardsById = new Map(readCards().map((card) => [card.id, card]));
-  return cardIds.map((cardId) => cardsById.get(cardId)).filter(Boolean);
+  return cardIds
+    .map((entry) => {
+      const cardId = typeof entry === "string" ? entry : entry?.id;
+      const variant = typeof entry === "string" ? "normal" : entry?.variant || "normal";
+      const card = cardsById.get(cardId);
+      return card ? withCardVariant(card, variant) : null;
+    })
+    .filter(Boolean);
 }
 
 function weightedRandomCard(cards) {
@@ -321,8 +332,34 @@ function weightedRandomCard(cards) {
     Epica: 11,
     Legendaria: 3,
   };
-  const available = cards.flatMap((card) => Array(weights[card.rarity] || 10).fill(card));
+  const candidates = cards.flatMap((card) => {
+    const variants = [withCardVariant(card, "normal")];
+    if (nextRarity(card.rarity)) {
+      variants.push(withCardVariant(card, "holo"));
+    }
+    return variants;
+  });
+  const available = candidates.flatMap((card) => Array(weights[card.displayRarity] || 10).fill(card));
   return available[Math.floor(Math.random() * available.length)];
+}
+
+function collectionKey(cardId, variant = "normal") {
+  return variant === "holo" ? `${cardId}:holo` : `${cardId}:normal`;
+}
+
+function withCardVariant(card, variant = "normal") {
+  const normalizedVariant = variant === "holo" && nextRarity(card.rarity) ? "holo" : "normal";
+  return {
+    ...card,
+    variant: normalizedVariant,
+    displayRarity: normalizedVariant === "holo" ? nextRarity(card.rarity) : card.rarity,
+  };
+}
+
+function nextRarity(rarity) {
+  const rarities = ["Comun", "Rara", "Epica", "Legendaria"];
+  const index = rarities.indexOf(rarity);
+  return index >= 0 && index < rarities.length - 1 ? rarities[index + 1] : null;
 }
 
 function readRequestBody(request) {
