@@ -88,10 +88,8 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
         >
           <span className="pack-seal pack-seal-top" />
           <span className="pack-image" />
-          <span className="pack-header">TCG MEME</span>
           <span className="pack-rim" />
           <span className="pack-shine" />
-          <span className="pack-edition">Tavern Pack</span>
           <span className="pack-count">5 cartas</span>
           <span className="pack-seal pack-seal-bottom" />
         </button>
