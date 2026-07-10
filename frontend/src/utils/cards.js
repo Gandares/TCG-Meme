@@ -5,8 +5,26 @@ export const rarityWeights = {
   Legendaria: 3,
 };
 
+export const rarityOrder = {
+  Comun: 0,
+  Rara: 1,
+  Epica: 2,
+  Legendaria: 3,
+};
+
 export function rarityClass(rarity) {
   return `rarity-${String(rarity || "Comun").toLowerCase()}`;
+}
+
+export function compareByRarity(firstCard, secondCard) {
+  const firstRarity = rarityOrder[firstCard.rarity] ?? 0;
+  const secondRarity = rarityOrder[secondCard.rarity] ?? 0;
+
+  if (firstRarity !== secondRarity) {
+    return firstRarity - secondRarity;
+  }
+
+  return String(firstCard.name || "").localeCompare(String(secondCard.name || ""));
 }
 
 export function initials(name) {

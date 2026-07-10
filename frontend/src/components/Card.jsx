@@ -1,7 +1,7 @@
 import { assetUrl } from "../api/cards";
 import { initials, rarityClass } from "../utils/cards";
 
-export function Card({ card, count }) {
+export function Card({ card, count, locked = false }) {
   const image = assetUrl(card.image);
 
   function handleTilt(event) {
@@ -22,6 +22,19 @@ export function Card({ card, count }) {
     event.currentTarget.style.setProperty("--tilt-y", "0deg");
     event.currentTarget.style.setProperty("--glare-x", "50%");
     event.currentTarget.style.setProperty("--glare-y", "50%");
+  }
+
+  if (locked) {
+    return (
+      <article className={`tcg-card card-locked tilt-card ${rarityClass(card.rarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+        <div className="card-back-pattern" />
+        <div className="card-back-mark">?</div>
+        <div className="card-back-copy">
+          <strong>Carta bloqueada</strong>
+          <span>No desbloqueada</span>
+        </div>
+      </article>
+    );
   }
 
   return (

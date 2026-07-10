@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
+import { compareByRarity } from "../utils/cards";
 
 const rarities = ["all", "Comun", "Rara", "Epica", "Legendaria"];
 
@@ -11,12 +12,14 @@ export function CollectionView({ cards, collection }) {
 
   const filteredCards = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return cards.filter((card) => {
-      const matchesRarity = rarity === "all" || card.rarity === rarity;
-      const haystack = `${card.name} ${card.rarity}`.toLowerCase();
-      return (collection[card.id] || 0) > 0 && matchesRarity && haystack.includes(query);
-    });
-  }, [cards, collection, rarity, search]);
+    return [...cards]
+      .sort(compareByRarity)
+      .filter((card) => {
+        const matchesRarity = rarity === "all" || card.rarity === rarity;
+        const haystack = `${card.name} ${card.rarity}`.toLowerCase();
+        return matchesRarity && haystack.includes(query);
+      });
+  }, [cards, rarity, search]);
 
   useEffect(() => {
     if (!selectedCard) {
@@ -38,7 +41,7 @@ export function CollectionView({ cards, collection }) {
       <div className="view-header">
         <div>
           <h2 id="collectionTitle">Coleccion</h2>
-          <p>Filtra tus cartas obtenidas por nombre o rareza.</p>
+          <p>Consulta tus cartas desbloqueadas y descubre que rarezas te faltan.</p>
         </div>
         <input
           className="search-input"
@@ -64,11 +67,22 @@ export function CollectionView({ cards, collection }) {
 
       <div className="card-grid">
         {filteredCards.length ? (
-          filteredCards.map((card) => (
-            <button className="card-button" type="button" key={card.id} onClick={() => setSelectedCard(card)}>
-              <Card card={card} count={collection[card.id]} />
-            </button>
-          ))
+          filteredCards.map((card) => {
+            const count = Number(collection[card.id]) || 0;
+            const isLocked = count <= 0;
+
+            return (
+              <button
+                className={`card-button${isLocked ? " locked" : ""}`}
+                type="button"
+                key={card.id}
+                disabled={isLocked}
+                onClick={() => setSelectedCard(card)}
+              >
+                <Card card={card} count={count} locked={isLocked} />
+              </button>
+            );
+          })
         ) : (
           <div className="empty-state">Todavia no hay cartas que coincidan.</div>
         )}

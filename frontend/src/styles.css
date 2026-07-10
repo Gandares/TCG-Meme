@@ -392,6 +392,14 @@ button {
   outline-offset: 4px;
 }
 
+.card-button:disabled {
+  cursor: default;
+}
+
+.card-button.locked {
+  color: inherit;
+}
+
 .results-grid {
   margin-top: 1.75rem;
 }
@@ -508,6 +516,79 @@ button {
 
 .tcg-card.rarity-legendaria {
   border-color: var(--accent-2);
+}
+
+.card-locked {
+  place-items: center;
+  grid-template-rows: 1fr auto 1fr;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.13), transparent 26%),
+    linear-gradient(145deg, rgba(232, 79, 61, 0.2), transparent 28%),
+    linear-gradient(315deg, rgba(92, 168, 232, 0.22), transparent 34%),
+    #121416;
+  color: rgba(255, 255, 255, 0.84);
+  opacity: 0.86;
+}
+
+.card-locked::before,
+.card-back-pattern {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.card-locked::before {
+  content: "";
+  z-index: 1;
+  margin: 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 0.45rem rgba(0, 0, 0, 0.16);
+}
+
+.card-back-pattern {
+  z-index: 0;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.06) 0 0.45rem, transparent 0.45rem 0.9rem),
+    radial-gradient(circle at 50% 50%, transparent 0 20%, rgba(255, 255, 255, 0.07) 20% 21%, transparent 21% 34%, rgba(255, 255, 255, 0.06) 34% 35%, transparent 35%);
+}
+
+.card-back-mark {
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 5.5rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 3.5rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.65);
+}
+
+.card-back-copy {
+  z-index: 2;
+  display: grid;
+  gap: 0.25rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.card-back-copy strong,
+.card-back-copy span {
+  display: block;
+}
+
+.card-back-copy strong {
+  font-size: 0.9rem;
+}
+
+.card-back-copy span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .card-art,
