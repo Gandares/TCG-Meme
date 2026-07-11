@@ -64,7 +64,7 @@ export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recent
       } finally {
         setIsOpening(false);
       }
-    }, 760);
+    }, 880);
   }
 
   function countInCurrentPack(cardId, variant = "normal") {
@@ -93,6 +93,12 @@ export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recent
           <span className="pack-rim" />
           <span className="pack-shine" />
           <span className="pack-count">5 cartas</span>
+          <span className="pack-burst" aria-hidden="true" />
+          <span className="pack-shards" aria-hidden="true">
+            {Array.from({ length: 12 }, (_, index) => (
+              <span key={index} style={{ "--shard-index": index }} />
+            ))}
+          </span>
           <span className="pack-seal pack-seal-bottom" />
         </button>
         <div className="pack-copy">

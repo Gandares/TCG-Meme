@@ -322,7 +322,7 @@ button {
 }
 
 .pack-art.opening {
-  animation: packOpen 820ms ease forwards;
+  animation: packExplode 860ms cubic-bezier(0.18, 0.92, 0.28, 1) forwards;
 }
 
 .pack-image {
@@ -370,6 +370,10 @@ button {
   animation: packFlapOpen 820ms ease forwards;
 }
 
+.pack-art.opening .pack-seal-bottom {
+  animation: packSealDrop 760ms ease forwards;
+}
+
 .pack-rim {
   position: absolute;
   inset: 2.45rem 0.45rem;
@@ -406,6 +410,73 @@ button {
 
 .pack-art:hover .pack-shine {
   animation: shine 900ms ease;
+}
+
+.pack-burst,
+.pack-shards,
+.pack-shards span {
+  position: absolute;
+  pointer-events: none;
+}
+
+.pack-burst {
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: 5rem;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 12%, rgba(255, 222, 132, 0.76) 13% 30%, rgba(157, 107, 255, 0.44) 31% 46%, transparent 68%);
+  box-shadow:
+    0 0 2rem rgba(255, 217, 125, 0.76),
+    0 0 4rem rgba(157, 107, 255, 0.45);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.18);
+}
+
+.pack-art.opening .pack-burst {
+  animation: packBurst 860ms ease-out forwards;
+}
+
+.pack-shards {
+  inset: 0;
+  z-index: 5;
+}
+
+.pack-shards span {
+  --angle: calc(var(--shard-index) * 30deg);
+  --distance: 8.6rem;
+  left: 50%;
+  top: 50%;
+  width: 0.34rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 246, 210, 0.95), rgba(242, 201, 76, 0.72) 50%, rgba(83, 52, 142, 0.28));
+  box-shadow: 0 0 0.65rem rgba(242, 201, 76, 0.5);
+  opacity: 0;
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--angle))
+    translateY(0)
+    scaleY(0.35);
+}
+
+.pack-shards span:nth-child(3n) {
+  --distance: 7rem;
+  height: 1.05rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(111, 199, 255, 0.58), transparent);
+}
+
+.pack-shards span:nth-child(3n + 1) {
+  --distance: 9.4rem;
+  width: 0.28rem;
+}
+
+.pack-art.opening .pack-shards span {
+  animation: packShard 820ms cubic-bezier(0.12, 0.72, 0.22, 1) forwards;
+  animation-delay: calc(var(--shard-index) * 12ms);
 }
 
 .pack-copy h3 {
@@ -1173,34 +1244,103 @@ button {
   text-align: center;
 }
 
-@keyframes packOpen {
+@keyframes packExplode {
   0% {
+    opacity: 1;
+    filter: saturate(1) brightness(1);
     transform: rotate(-2deg) translateY(0) scale(1);
   }
-  20% {
-    transform: rotate(3deg) translateX(-0.35rem) scale(1.02);
+  18% {
+    filter: saturate(1.2) brightness(1.06);
+    transform: rotate(3deg) translateX(-0.35rem) scale(0.96);
   }
-  40% {
-    transform: rotate(-4deg) translateX(0.35rem) scale(1.04);
+  34% {
+    transform: rotate(-4deg) translateX(0.35rem) scale(1.08);
   }
-  62% {
-    transform: rotate(1deg) translateY(-0.55rem) scale(1.06);
+  48% {
+    opacity: 1;
+    filter: saturate(1.45) brightness(1.35);
+    transform: rotate(1deg) translateY(-0.55rem) scale(1.14);
+  }
+  66% {
+    opacity: 0.38;
+    filter: saturate(1.8) brightness(1.9) blur(0.04rem);
+    transform: rotate(0deg) translateY(-0.8rem) scale(1.24);
   }
   100% {
-    transform: rotate(0deg) translateY(-0.35rem) scale(1.02);
+    opacity: 0;
+    filter: saturate(1.8) brightness(2.2) blur(0.2rem);
+    transform: rotate(0deg) translateY(-1.15rem) scale(1.42);
   }
 }
 
 @keyframes packFlapOpen {
   0%,
-  45% {
+  36% {
     transform: rotateX(0deg);
   }
-  72% {
-    transform: rotateX(-118deg);
+  52% {
+    transform: rotateX(-138deg) translateY(-0.2rem);
   }
   100% {
-    transform: rotateX(-88deg);
+    transform: rotateX(-124deg) translateY(-1.1rem);
+    opacity: 0;
+  }
+}
+
+@keyframes packSealDrop {
+  0%,
+  42% {
+    transform: rotateX(0deg) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(80deg) translateY(2rem);
+    opacity: 0;
+  }
+}
+
+@keyframes packBurst {
+  0%,
+  30% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.18);
+  }
+  42% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  68% {
+    opacity: 0.62;
+    transform: translate(-50%, -50%) scale(2.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.2);
+  }
+}
+
+@keyframes packShard {
+  0%,
+  34% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--angle))
+      translateY(0)
+      scaleY(0.35);
+  }
+  44% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--angle))
+      translateY(calc(var(--distance) * -1))
+      scaleY(1)
+      rotate(28deg);
   }
 }
 
@@ -1210,6 +1350,16 @@ button {
   }
   to {
     transform: translateX(62%) rotate(18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pack-art.opening,
+  .pack-art.opening .pack-seal-top,
+  .pack-art.opening .pack-seal-bottom,
+  .pack-art.opening .pack-burst,
+  .pack-art.opening .pack-shards span {
+    animation-duration: 1ms;
   }
 }
 
