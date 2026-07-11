@@ -1,9 +1,12 @@
+import { assetUrl } from "../api/cards";
+
 export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
   const tabs = [
     ["packs", "PK", "Sobres"],
     ["collection", "CL", "Coleccion"],
     ["creator", "+", "Crear carta"],
   ];
+  const coinImage = assetUrl("assets/arcane-coin.png");
 
   return (
     <aside className="sidebar">
@@ -19,7 +22,7 @@ export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
         <div>
           <strong>{user.username}</strong>
           <div className="currency-pill" aria-label={`${stats.currency} monedas`}>
-            <img src="/assets/arcane-coin.png" alt="" />
+            <img src={coinImage} alt="" />
             <span>{stats.currency}</span>
           </div>
         </div>

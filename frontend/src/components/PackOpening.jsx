@@ -25,6 +25,7 @@ export function PackOpening({
   const canOpen = hasCards && canAfford;
   const selectedExpansion = expansions.find((expansion) => expansion.id === selectedExpansionId) || expansions[0];
   const packImage = assetUrl(selectedExpansion?.packImage);
+  const coinImage = assetUrl("assets/arcane-coin.png");
 
   useEffect(() => {
     if (pulls.length) {
@@ -128,7 +129,7 @@ export function PackOpening({
         <div className="pack-copy">
           <h3>{isOpening ? "Abriendo sobre..." : "Toca el sobre"}</h3>
           <div className="pack-price" aria-label={`Coste ${packCost} monedas`}>
-            <img src="/assets/arcane-coin.png" alt="" />
+            <img src={coinImage} alt="" />
             <strong>{packCost}</strong>
           </div>
           <p>
