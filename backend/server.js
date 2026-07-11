@@ -47,7 +47,7 @@ const server = http.createServer(async (request, response) => {
 
   const requestUrl = new URL(request.url, `http://${host}:${port}`);
 
-  if ((requestUrl.pathname === "/" || requestUrl.pathname === "/health") && request.method === "GET") {
+  if ((requestUrl.pathname === "/" || requestUrl.pathname === "/health" || requestUrl.pathname === "/api/health") && request.method === "GET") {
     sendJson(response, {
       status: "ok",
       service: "tcg-meme-backend",
