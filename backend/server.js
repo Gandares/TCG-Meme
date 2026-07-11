@@ -6,9 +6,9 @@ const path = require("path");
 const port = Number(process.env.PORT) || 3001;
 const host = process.env.HOST || (process.env.RAILWAY_ENVIRONMENT ? "0.0.0.0" : "127.0.0.1");
 const projectRoot = path.resolve(__dirname, "..");
-const dataDir = path.join(projectRoot, "data");
+const dataDir = resolveStoragePath(process.env.DATA_DIR, path.join(projectRoot, "data"));
 const assetsDir = path.join(projectRoot, "assets");
-const uploadsDir = path.join(assetsDir, "uploads");
+const uploadsDir = resolveStoragePath(process.env.UPLOADS_DIR, path.join(assetsDir, "uploads"));
 const cardsFile = path.join(dataDir, "card.json");
 const expansionsFile = path.join(dataDir, "expansions.json");
 const legacyCardsFile = path.join(dataDir, "cards.json");
@@ -152,6 +152,10 @@ const server = http.createServer(async (request, response) => {
 server.listen(port, host, () => {
   console.log(`TCG Meme API running at http://${host}:${port}`);
 });
+
+function resolveStoragePath(envPath, fallbackPath) {
+  return envPath ? path.resolve(envPath) : fallbackPath;
+}
 
 function ensureStorage() {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -803,9 +807,19 @@ function imageFilenameBase(id, suffix = "") {
 
 function serveAsset(urlPath, response) {
   const relativePath = decodeURIComponent(urlPath.replace(/^\/assets\//, ""));
-  const filePath = path.normalize(path.join(assetsDir, relativePath));
+  const source =
+    relativePath === "uploads" || relativePath.startsWith("uploads/")
+      ? {
+          baseDir: uploadsDir,
+          relativePath: relativePath.replace(/^uploads\/?/, ""),
+        }
+      : {
+          baseDir: assetsDir,
+          relativePath,
+        };
+  const filePath = path.normalize(path.join(source.baseDir, source.relativePath));
 
-  if (!filePath.startsWith(assetsDir)) {
+  if (!isPathInside(filePath, source.baseDir)) {
     response.writeHead(403);
     response.end("Forbidden");
     return;
@@ -823,6 +837,11 @@ function serveAsset(urlPath, response) {
     });
     response.end(content);
   });
+}
+
+function isPathInside(filePath, baseDir) {
+  const relativePath = path.relative(baseDir, filePath);
+  return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
 }
 
 function normalizeRarity(rarity) {
