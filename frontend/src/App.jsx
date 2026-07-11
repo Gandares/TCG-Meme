@@ -52,7 +52,13 @@ export default function App() {
     }
 
     const intervalId = window.setInterval(() => {
-      setCurrency((currentCurrency) => Math.min(500, currentCurrency + 1));
+      setCurrency((currentCurrency) => {
+        if (currentCurrency >= 500) {
+          return currentCurrency;
+        }
+
+        return Math.min(500, currentCurrency + 1);
+      });
     }, 10000);
 
     return () => window.clearInterval(intervalId);
