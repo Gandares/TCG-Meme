@@ -159,6 +159,7 @@ function ensureStorage() {
     fs.writeFileSync(usersFile, "[]\n", "utf8");
   }
   migrateCardsToDefaultExpansion();
+  migrateCardIdsToExpansionNameFormat();
 }
 
 function readCards() {
@@ -235,6 +236,68 @@ function migrateCardsToDefaultExpansion() {
   const needsMigration = cards.some((card) => !card.expansionId);
   if (needsMigration) {
     writeCards(cards.map(normalizeCardExpansion));
+  }
+}
+
+function migrateCardIdsToExpansionNameFormat() {
+  const expansionsById = new Map(readExpansions().map((expansion) => [expansion.id, expansion]));
+  const usedIds = new Set();
+  const idMap = new Map();
+  const cards = readCardsFromFile(cardsFile).map(normalizeCardExpansion);
+  const migratedCards = cards.map((card) => {
+    const expansion = expansionsById.get(card.expansionId) || defaultExpansion;
+    const expectedId = createCardId(expansion, card.name);
+    if (!expectedId || usedIds.has(expectedId)) {
+      usedIds.add(card.id);
+      return card;
+    }
+
+    usedIds.add(expectedId);
+    if (card.id === expectedId) {
+      return card;
+    }
+
+    idMap.set(card.id, expectedId);
+    return { ...card, id: expectedId };
+  });
+
+  if (!idMap.size) {
+    return;
+  }
+
+  writeCards(migratedCards);
+  migrateUserCardReferences(idMap);
+}
+
+function migrateUserCardReferences(idMap) {
+  const users = readUsers();
+  let changed = false;
+  const migratedUsers = users.map((user) => {
+    const collection = {};
+    for (const [key, value] of Object.entries(user.collection || {})) {
+      const { cardId, variant } = parseCollectionKey(key);
+      const nextCardId = idMap.get(cardId) || cardId;
+      const nextKey = collectionKey(nextCardId, variant);
+      collection[nextKey] = (Number(collection[nextKey]) || 0) + (Number(value) || 0);
+      if (nextKey !== key) {
+        changed = true;
+      }
+    }
+
+    const recentPulls = (user.recentPulls || []).map((entry) => {
+      const cardId = typeof entry === "string" ? entry : entry?.id;
+      const nextCardId = idMap.get(cardId) || cardId;
+      if (nextCardId !== cardId) {
+        changed = true;
+      }
+      return typeof entry === "string" ? nextCardId : { ...entry, id: nextCardId };
+    });
+
+    return { ...user, collection, recentPulls };
+  });
+
+  if (changed) {
+    writeUsers(migratedUsers);
   }
 }
 
@@ -483,6 +546,18 @@ function collectionKey(cardId, variant = "normal") {
   return variant === "holo" ? `${cardId}:holo` : `${cardId}:normal`;
 }
 
+function parseCollectionKey(key) {
+  if (String(key).endsWith(":holo")) {
+    return { cardId: String(key).slice(0, -5), variant: "holo" };
+  }
+
+  if (String(key).endsWith(":normal")) {
+    return { cardId: String(key).slice(0, -7), variant: "normal" };
+  }
+
+  return { cardId: String(key), variant: "normal" };
+}
+
 function withCardVariant(card, variant = "normal") {
   const normalizedVariant = variant === "holo" ? "holo" : "normal";
   return {
@@ -597,7 +672,6 @@ function parseMultipart(buffer, boundary) {
 }
 
 function createCard(payload, user) {
-  const id = createId();
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 130);
   const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
@@ -609,6 +683,14 @@ function createCard(payload, user) {
   }
   if (!description) {
     throw new Error("La descripcion es obligatoria.");
+  }
+  if (cardNameExistsInExpansion(name, expansion.id)) {
+    throw new Error("Ya existe una carta con ese nombre en esta expansion.");
+  }
+
+  const id = createCardId(expansion, name);
+  if (!id) {
+    throw new Error("No se pudo generar el id de la carta.");
   }
 
   return {
@@ -623,6 +705,13 @@ function createCard(payload, user) {
     flavor: cleanText(payload.flavor, 120),
     author: cleanText(user?.username, 28) || "Creador anonimo",
   };
+}
+
+function cardNameExistsInExpansion(name, expansionId) {
+  const normalizedName = normalizeNameKey(name);
+  return readCardsFromFile(cardsFile)
+    .map(normalizeCardExpansion)
+    .some((card) => card.expansionId === expansionId && normalizeNameKey(card.name) === normalizedName);
 }
 
 function saveImage(id, imageData) {
@@ -706,6 +795,8 @@ function cleanText(value, maxLength) {
 
 function cleanSlug(value) {
   return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-")
@@ -713,8 +804,14 @@ function cleanSlug(value) {
     .slice(0, 40);
 }
 
-function createId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function createCardId(expansion, cardName) {
+  const expansionSlug = cleanSlug(expansion?.name || expansion?.id);
+  const cardSlug = cleanSlug(cardName);
+  return expansionSlug && cardSlug ? `${expansionSlug}-${cardSlug}` : "";
+}
+
+function normalizeNameKey(value) {
+  return cleanSlug(value);
 }
 
 function sendJson(response, data, status = 200) {
