@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
+import { assetUrl } from "../api/cards";
 import { withCardVariant } from "../utils/cards";
 
-export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recentPulls = [], onOpenPack, onDismissReveal }) {
+export function PackOpening({
+  cards,
+  expansions = [],
+  selectedExpansionId = "",
+  onExpansionChange,
+  currency = 0,
+  packCost = 100,
+  pulls,
+  recentPulls = [],
+  onOpenPack,
+  onDismissReveal,
+}) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const hasCards = cards.length > 0;
   const canAfford = currency >= packCost;
   const canOpen = hasCards && canAfford;
+  const selectedExpansion = expansions.find((expansion) => expansion.id === selectedExpansionId) || expansions[0];
+  const packImage = assetUrl(selectedExpansion?.packImage);
 
   useEffect(() => {
     if (pulls.length) {
@@ -76,8 +90,16 @@ export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recent
       <div className="view-header">
         <div>
           <h2 id="packsTitle">Apertura de sobre</h2>
-          <p>El sobre usa las cartas que hayas creado y reparte 5 al azar.</p>
+          <p>El sobre reparte 5 cartas de la expansion seleccionada.</p>
         </div>
+        <label className="select-control">
+          Expansion
+          <select value={selectedExpansionId} onChange={(event) => onExpansionChange?.(event.target.value)}>
+            {expansions.map((expansion) => (
+              <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="pack-stage">
@@ -89,7 +111,7 @@ export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recent
           onClick={handlePackClick}
         >
           <span className="pack-seal pack-seal-top" />
-          <span className="pack-image" />
+          <span className="pack-image" style={packImage ? { backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.22)), url("${packImage}")` } : undefined} />
           <span className="pack-rim" />
           <span className="pack-shine" />
           <span className="pack-count">5 cartas</span>
@@ -109,7 +131,7 @@ export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recent
           </div>
           <p>
             {!hasCards
-              ? "Crea al menos una carta para empezar."
+              ? "Crea al menos una carta en esta expansion para empezar."
               : canAfford
                 ? "Haz click sobre el sobre para revelar 5 cartas."
                 : `Necesitas ${packCost} monedas para abrir un sobre.`}

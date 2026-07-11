@@ -43,6 +43,15 @@ export async function fetchCards() {
   return response.json();
 }
 
+export async function fetchExpansions() {
+  const response = await fetch(`${API_BASE}/api/expansions`);
+  if (!response.ok) {
+    throw new Error("No se pudieron cargar las expansiones.");
+  }
+
+  return response.json();
+}
+
 export async function login(username, password) {
   return postAuth("/api/auth/login", username, password);
 }
@@ -79,10 +88,14 @@ export async function fetchCollection(token) {
   return response.json();
 }
 
-export async function openPack(token) {
+export async function openPack(token, expansionId) {
   const response = await fetch(`${API_BASE}/api/packs/open`, {
     method: "POST",
-    headers: authHeaders(token),
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify({ expansionId }),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -99,6 +112,7 @@ export async function createCard(card, token) {
   body.set("description", card.description);
   body.set("flavor", card.flavor);
   body.set("author", card.author);
+  body.set("expansionId", card.expansionId);
   if (card.imageFile) {
     body.set("image", card.imageFile);
   }

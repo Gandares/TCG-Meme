@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { clearAuth, createCard, fetchCards, fetchCollection, loadAuth, openPack, saveAuth } from "./api/cards";
+import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, loadAuth, openPack, saveAuth } from "./api/cards";
 import { AuthView } from "./components/AuthView";
 import { CardCreator } from "./components/CardCreator";
 import { CollectionView } from "./components/CollectionView";
@@ -10,6 +10,8 @@ export default function App() {
   const [auth, setAuth] = useState(() => loadAuth());
   const [activeView, setActiveView] = useState("packs");
   const [cards, setCards] = useState([]);
+  const [expansions, setExpansions] = useState([]);
+  const [selectedExpansionId, setSelectedExpansionId] = useState("");
   const [collection, setCollection] = useState({});
   const [pulls, setPulls] = useState([]);
   const [recentPulls, setRecentPulls] = useState([]);
@@ -24,10 +26,18 @@ export default function App() {
     }
 
     let isMounted = true;
-    Promise.all([fetchCards(), fetchCollection(auth.token)])
-      .then(([serverCards, userCollection]) => {
+    Promise.all([fetchCards(), fetchExpansions(), fetchCollection(auth.token)])
+      .then(([serverCards, serverExpansions, userCollection]) => {
         if (isMounted) {
           setCards(serverCards);
+          setExpansions(serverExpansions);
+          setSelectedExpansionId((currentExpansionId) => {
+            if (serverExpansions.some((expansion) => expansion.id === currentExpansionId)) {
+              return currentExpansionId;
+            }
+
+            return serverExpansions[0]?.id || "";
+          });
           setCollection(userCollection.collection || {});
           setOpenedPacks(Number(userCollection.openedPacks) || 0);
           setRecentPulls(userCollection.recentPulls || []);
@@ -83,6 +93,8 @@ export default function App() {
     clearAuth();
     setAuth(null);
     setCards([]);
+    setExpansions([]);
+    setSelectedExpansionId("");
     setCollection({});
     setPulls([]);
     setRecentPulls([]);
@@ -93,7 +105,8 @@ export default function App() {
   }
 
   async function handleOpenPack() {
-    if (!cards.length) {
+    const expansionCards = cards.filter((card) => card.expansionId === selectedExpansionId);
+    if (!expansionCards.length) {
       setActiveView("creator");
       return;
     }
@@ -105,7 +118,7 @@ export default function App() {
 
     setError("");
     try {
-      const pack = await openPack(auth.token);
+      const pack = await openPack(auth.token, selectedExpansionId);
       const nextPulls = pack.pulls || [];
       setPulls(nextPulls);
       setRecentPulls(pack.recentPulls || []);
@@ -135,7 +148,10 @@ export default function App() {
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         {activeView === "packs" ? (
           <PackOpening
-            cards={cards}
+            cards={cards.filter((card) => card.expansionId === selectedExpansionId)}
+            expansions={expansions}
+            selectedExpansionId={selectedExpansionId}
+            onExpansionChange={setSelectedExpansionId}
             currency={currency}
             packCost={packCost}
             pulls={pulls}
@@ -144,8 +160,8 @@ export default function App() {
             onDismissReveal={() => setPulls([])}
           />
         ) : null}
-        {activeView === "collection" ? <CollectionView cards={cards} collection={collection} /> : null}
-        {activeView === "creator" ? <CardCreator user={auth.user} onCreateCard={handleCreateCard} /> : null}
+        {activeView === "collection" ? <CollectionView cards={cards} collection={collection} expansions={expansions} /> : null}
+        {activeView === "creator" ? <CardCreator user={auth.user} expansions={expansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
       </main>
     </div>
   );

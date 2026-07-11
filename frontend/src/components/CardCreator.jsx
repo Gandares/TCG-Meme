@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { resizeImageFile, withCardVariant } from "../utils/cards";
 
@@ -11,12 +11,20 @@ const emptyForm = {
   flavor: "",
 };
 
-export function CardCreator({ user, onCreateCard }) {
-  const [form, setForm] = useState(emptyForm);
+export function CardCreator({ user, expansions = [], selectedExpansionId = "", onCreateCard }) {
+  const [form, setForm] = useState({ ...emptyForm, expansionId: selectedExpansionId });
   const [previewVariant, setPreviewVariant] = useState("normal");
   const [error, setError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const creatorName = user?.username || "";
+  const currentExpansionId = form.expansionId || selectedExpansionId || expansions[0]?.id || "";
+  const currentExpansion = expansions.find((expansion) => expansion.id === currentExpansionId) || expansions[0];
+
+  useEffect(() => {
+    if (!form.expansionId && selectedExpansionId) {
+      setForm((current) => ({ ...current, expansionId: selectedExpansionId }));
+    }
+  }, [form.expansionId, selectedExpansionId]);
 
   const previewCard = useMemo(() => {
     const variant = previewVariant === "holo" ? "holo" : "normal";
@@ -30,10 +38,12 @@ export function CardCreator({ user, onCreateCard }) {
         description: form.description || "Descripcion de la carta.",
         flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
         author: creatorName || "Creador anonimo",
+        expansionId: currentExpansionId,
+        expansion: currentExpansion,
       },
       variant,
     );
-  }, [creatorName, form, previewVariant]);
+  }, [creatorName, currentExpansion, currentExpansionId, form, previewVariant]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -67,12 +77,13 @@ export function CardCreator({ user, onCreateCard }) {
         type: "",
         rarity: form.rarity,
         imageFile: form.imageFile,
+        expansionId: currentExpansionId,
         description: form.description.trim(),
         flavor: form.flavor.trim(),
         author: creatorName,
       });
       event.currentTarget.reset();
-      setForm(emptyForm);
+      setForm({ ...emptyForm, expansionId: currentExpansionId });
       setPreviewVariant("normal");
     } catch (saveError) {
       setError(saveError.message || "No se pudo guardar la carta.");
@@ -103,6 +114,14 @@ export function CardCreator({ user, onCreateCard }) {
               <option>Rara</option>
               <option>Epica</option>
               <option>Legendaria</option>
+            </select>
+          </label>
+          <label>
+            Expansion *
+            <select value={currentExpansionId} required onChange={(event) => updateField("expansionId", event.target.value)}>
+              {expansions.map((expansion) => (
+                <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
+              ))}
             </select>
           </label>
           <label>

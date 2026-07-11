@@ -10,12 +10,19 @@ const dataDir = path.join(projectRoot, "data");
 const assetsDir = path.join(projectRoot, "assets");
 const uploadsDir = path.join(assetsDir, "uploads");
 const cardsFile = path.join(dataDir, "card.json");
+const expansionsFile = path.join(dataDir, "expansions.json");
 const legacyCardsFile = path.join(dataDir, "cards.json");
 const usersFile = path.join(dataDir, "users.json");
 const tokenSecret = "tcg-meme-local-dev-secret";
 const currencyMax = 500;
 const currencyIntervalMs = 10_000;
 const packCost = 100;
+const defaultExpansion = {
+  id: "prueba",
+  name: "Prueba",
+  packImage: "assets/pack-tavern.png",
+  cardBackImage: "assets/card-back-fantasy.png",
+};
 
 const contentTypes = {
   ".json": "application/json; charset=utf-8",
@@ -77,6 +84,11 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (requestUrl.pathname === "/api/expansions" && request.method === "GET") {
+    sendJson(response, readExpansions());
+    return;
+  }
+
   if (requestUrl.pathname === "/api/cards" && request.method === "POST") {
     try {
       const user = requireUser(request);
@@ -112,7 +124,8 @@ const server = http.createServer(async (request, response) => {
   if (requestUrl.pathname === "/api/packs/open" && request.method === "POST") {
     try {
       const user = requireUser(request);
-      const pulls = openPackForUser(user.username);
+      const payload = await readJsonBody(request);
+      const pulls = openPackForUser(user.username, payload.expansionId);
       sendJson(response, pulls);
     } catch (error) {
       sendJson(response, { error: error.message || "No se pudo abrir el sobre." }, 400);
@@ -139,13 +152,17 @@ function ensureStorage() {
     const legacyCards = fs.existsSync(legacyCardsFile) ? readCardsFromFile(legacyCardsFile) : [];
     fs.writeFileSync(cardsFile, `${JSON.stringify(legacyCards, null, 2)}\n`, "utf8");
   }
+  if (!fs.existsSync(expansionsFile)) {
+    writeExpansions([defaultExpansion]);
+  }
   if (!fs.existsSync(usersFile)) {
     fs.writeFileSync(usersFile, "[]\n", "utf8");
   }
+  migrateCardsToDefaultExpansion();
 }
 
 function readCards() {
-  return readCardsFromFile(cardsFile);
+  return attachExpansions(readCardsFromFile(cardsFile).map(normalizeCardExpansion));
 }
 
 function readCardsFromFile(filePath) {
@@ -162,7 +179,63 @@ function readCardsFromFile(filePath) {
 }
 
 function writeCards(cards) {
-  fs.writeFileSync(cardsFile, `${JSON.stringify(cards, null, 2)}\n`, "utf8");
+  fs.writeFileSync(cardsFile, `${JSON.stringify(cards.map(serializeCard), null, 2)}\n`, "utf8");
+}
+
+function serializeCard(card) {
+  const { expansion, ...serializableCard } = normalizeCardExpansion(card);
+  return serializableCard;
+}
+
+function readExpansions() {
+  try {
+    const content = fs.readFileSync(expansionsFile, "utf8").trim();
+    if (!content) {
+      return [defaultExpansion];
+    }
+    const expansions = JSON.parse(content);
+    return Array.isArray(expansions) && expansions.length ? expansions.map(normalizeExpansion) : [defaultExpansion];
+  } catch {
+    return [defaultExpansion];
+  }
+}
+
+function writeExpansions(expansions) {
+  fs.writeFileSync(expansionsFile, `${JSON.stringify(expansions.map(normalizeExpansion), null, 2)}\n`, "utf8");
+}
+
+function normalizeExpansion(expansion) {
+  return {
+    ...defaultExpansion,
+    ...expansion,
+    id: cleanSlug(expansion?.id) || defaultExpansion.id,
+    name: cleanText(expansion?.name, 40) || defaultExpansion.name,
+    packImage: cleanText(expansion?.packImage, 160) || defaultExpansion.packImage,
+    cardBackImage: cleanText(expansion?.cardBackImage, 160) || defaultExpansion.cardBackImage,
+  };
+}
+
+function normalizeCardExpansion(card) {
+  return {
+    ...card,
+    expansionId: cleanSlug(card.expansionId) || defaultExpansion.id,
+  };
+}
+
+function attachExpansions(cards) {
+  const expansionsById = new Map(readExpansions().map((expansion) => [expansion.id, expansion]));
+  return cards.map((card) => ({
+    ...card,
+    expansion: expansionsById.get(card.expansionId) || defaultExpansion,
+  }));
+}
+
+function migrateCardsToDefaultExpansion() {
+  const cards = readCardsFromFile(cardsFile);
+  const needsMigration = cards.some((card) => !card.expansionId);
+  if (needsMigration) {
+    writeCards(cards.map(normalizeCardExpansion));
+  }
 }
 
 function readUsers() {
@@ -302,10 +375,11 @@ function refreshUserCurrency(username) {
   });
 }
 
-function openPackForUser(username) {
-  const cards = readCards();
+function openPackForUser(username, expansionId = defaultExpansion.id) {
+  const expansion = findExpansion(expansionId);
+  const cards = readCards().filter((card) => card.expansionId === expansion.id);
   if (!cards.length) {
-    throw new Error("No hay cartas disponibles.");
+    throw new Error("No hay cartas disponibles en esta expansion.");
   }
   const pulls = Array.from({ length: 5 }, () => weightedRandomCard(cards));
   const updatedUser = updateUser(username, (user) => {
@@ -339,7 +413,17 @@ function openPackForUser(username) {
     recentPulls: resolveRecentPulls(updatedUser.recentPulls || []),
     currency: publicCurrency(updatedUser),
     packCost,
+    expansion,
   };
+}
+
+function findExpansion(expansionId) {
+  const normalizedId = cleanSlug(expansionId) || defaultExpansion.id;
+  const expansion = readExpansions().find((item) => item.id === normalizedId);
+  if (!expansion) {
+    throw new Error("Expansion no encontrada.");
+  }
+  return expansion;
 }
 
 function publicCurrency(user) {
@@ -516,6 +600,7 @@ function createCard(payload, user) {
   const id = createId();
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 130);
+  const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
   if (!name) {
     throw new Error("El titulo es obligatorio.");
   }
@@ -531,6 +616,8 @@ function createCard(payload, user) {
     name,
     type: "",
     rarity: normalizeRarity(payload.rarity),
+    expansionId: expansion.id,
+    expansion,
     image: saveImage(id, payload.image),
     description,
     flavor: cleanText(payload.flavor, 120),
@@ -615,6 +702,15 @@ function normalizeRarity(rarity) {
 
 function cleanText(value, maxLength) {
   return String(value || "").trim().slice(0, maxLength);
+}
+
+function cleanSlug(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
 }
 
 function createId() {

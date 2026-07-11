@@ -1,0 +1,8 @@
+[
+  {
+    "id": "prueba",
+    "name": "Prueba",
+    "packImage": "assets/pack-tavern.png",
+    "cardBackImage": "assets/card-back-fantasy.png"
+  }
+]

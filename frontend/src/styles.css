@@ -250,6 +250,7 @@ button {
 .primary-button,
 .ghost-button,
 .search-input,
+.select-control select,
 .editor-form input,
 .editor-form select,
 .editor-form textarea {
@@ -1154,6 +1155,7 @@ button {
 }
 
 .search-input,
+.select-control select,
 .editor-form input,
 .editor-form select,
 .editor-form textarea {
@@ -1180,6 +1182,21 @@ button {
 
 .search-input {
   max-width: 20rem;
+}
+
+.select-control {
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(100%, 14rem);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.select-control select {
+  font-weight: 700;
+  text-transform: none;
 }
 
 .creator-layout {

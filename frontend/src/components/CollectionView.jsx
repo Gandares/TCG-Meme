@@ -5,21 +5,25 @@ import { compareByRarity, getCollectionCount, getOwnedVariantCount, withCardVari
 
 const rarities = ["all", "Comun", "Rara", "Epica", "Legendaria"];
 
-export function CollectionView({ cards, collection }) {
+export function CollectionView({ cards, collection, expansions = [] }) {
   const [search, setSearch] = useState("");
   const [rarity, setRarity] = useState("all");
+  const [expansionId, setExpansionId] = useState("all");
   const [selectedCard, setSelectedCard] = useState(null);
 
   const filteredCards = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const expansionsById = new Map(expansions.map((expansion) => [expansion.id, expansion]));
     return [...cards]
       .sort(compareByRarity)
       .filter((card) => {
         const matchesRarity = rarity === "all" || card.rarity === rarity;
-        const haystack = `${card.name} ${card.rarity}`.toLowerCase();
-        return matchesRarity && haystack.includes(query);
+        const matchesExpansion = expansionId === "all" || card.expansionId === expansionId;
+        const expansionName = expansionsById.get(card.expansionId)?.name || "";
+        const haystack = `${card.name} ${card.rarity} ${expansionName}`.toLowerCase();
+        return matchesRarity && matchesExpansion && haystack.includes(query);
       });
-  }, [cards, rarity, search]);
+  }, [cards, expansionId, expansions, rarity, search]);
 
   useEffect(() => {
     if (!selectedCard) {
@@ -61,6 +65,26 @@ export function CollectionView({ cards, collection }) {
             onClick={() => setRarity(item)}
           >
             {item === "all" ? "Todas" : item}
+          </button>
+        ))}
+      </div>
+
+      <div className="filters" role="group" aria-label="Filtros de expansion">
+        <button
+          className={`filter-button ${expansionId === "all" ? "active" : ""}`}
+          type="button"
+          onClick={() => setExpansionId("all")}
+        >
+          Todas las expansiones
+        </button>
+        {expansions.map((expansion) => (
+          <button
+            className={`filter-button ${expansionId === expansion.id ? "active" : ""}`}
+            type="button"
+            key={expansion.id}
+            onClick={() => setExpansionId(expansion.id)}
+          >
+            {expansion.name}
           </button>
         ))}
       </div>

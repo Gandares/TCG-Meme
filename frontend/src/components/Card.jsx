@@ -3,6 +3,7 @@ import { effectiveRarity, initials, rarityClass } from "../utils/cards";
 
 export function Card({ card, count, locked = false }) {
   const image = assetUrl(card.image);
+  const cardBackImage = assetUrl(card.expansion?.cardBackImage);
   const variant = card.variant === "holo" ? "holo" : "normal";
   const displayRarity = card.displayRarity || effectiveRarity(card, variant);
 
@@ -29,7 +30,7 @@ export function Card({ card, count, locked = false }) {
   if (locked) {
     return (
       <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} aria-label="Carta no desbloqueada" onPointerMove={handleTilt} onPointerLeave={resetTilt}>
-        <div className="card-back-pattern" />
+        <div className="card-back-pattern" style={cardBackImage ? { backgroundImage: `url("${cardBackImage}")` } : undefined} />
       </article>
     );
   }

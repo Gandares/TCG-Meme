@@ -100,6 +100,10 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
               <dt>Creador</dt>
               <dd>{card.author || "Creador anonimo"}</dd>
             </div>
+            <div>
+              <dt>Expansion</dt>
+              <dd>{card.expansion?.name || "Sin expansion"}</dd>
+            </div>
           </dl>
         </div>
       </section>
