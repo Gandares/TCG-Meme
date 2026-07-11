@@ -352,7 +352,7 @@ function applyCurrencyRegen(user) {
   const currentCurrency = clampCurrency(user.currency);
   const updatedAt = Number(user.currencyUpdatedAt) || now;
   if (currentCurrency >= currencyMax) {
-    return { currency: currencyMax, updatedAt: now };
+    return { currency: currentCurrency, updatedAt: now };
   }
 
   const earned = Math.max(0, Math.floor((now - updatedAt) / currencyIntervalMs));
@@ -366,7 +366,7 @@ function applyCurrencyRegen(user) {
 }
 
 function clampCurrency(value) {
-  return Math.min(currencyMax, Math.max(0, Math.floor(Number(value) || 0)));
+  return Math.max(0, Math.floor(Number(value) || 0));
 }
 
 function resolveRecentPulls(cardIds) {
