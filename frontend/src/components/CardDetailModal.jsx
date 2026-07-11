@@ -1,22 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { assetUrl } from "../api/cards";
-import { effectiveRarity, getCollectionCount, initials, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
+import { cardVariants, effectiveRarity, getCollectionCount, initials, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
 
 export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
-  const defaultVariant = variant === "holo" ? "holo" : "normal";
+  const defaultVariant = cardVariants.includes(variant) ? variant : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
   const availableVariants = useMemo(() => {
     if (!collection) {
       return [defaultVariant];
     }
 
-    return ["normal", "holo"].filter((item) => {
+    return cardVariants.filter((item) => {
       return getCollectionCount(collection, card.id, item) > 0;
     });
   }, [card.id, card.rarity, collection, defaultVariant]);
   const displayVariant = availableVariants.includes(selectedVariant) ? selectedVariant : availableVariants[0] || defaultVariant;
   const displayCard = withCardVariant(card, displayVariant);
-  const image = assetUrl(displayCard.image);
+  const isHolographic = displayVariant === "holo" || displayVariant === "alternative";
+  const image = assetUrl(displayVariant === "alternative" ? displayCard.alternativeImage || displayCard.image : displayCard.image);
   const displayCount = collection ? getCollectionCount(collection, card.id, displayVariant) : count;
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
-        className={`card-detail ${rarityClass(effectiveRarity(card, displayVariant))} ${displayVariant === "holo" ? "detail-holo" : ""}`}
+        className={`card-detail ${rarityClass(effectiveRarity(card, displayVariant))} ${isHolographic ? "detail-holo" : ""} ${displayVariant === "alternative" ? "detail-alternative" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cardDetailTitle"
@@ -56,9 +57,9 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
           x
         </button>
 
-        <div className={`detail-art tilt-card ${displayVariant === "holo" ? "card-holo" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+        <div className={`detail-art tilt-card ${isHolographic ? "card-holo" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
           {image ? <img src={image} alt={displayCard.name} /> : <span>{initials(displayCard.name)}</span>}
-          {displayVariant === "holo" ? <div className="holo-layer" /> : null}
+          {isHolographic ? <div className="holo-layer" /> : null}
         </div>
 
         <div className="detail-content">
@@ -66,7 +67,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
             <div>
               <h2 id="cardDetailTitle">{card.name}</h2>
               <p className={`detail-rarity ${rarityClass(displayCard.displayRarity)}`}>
-                {displayCard.displayRarity}{displayVariant === "holo" ? " Holo" : ""}
+                {displayCard.displayRarity}{displayVariant !== "normal" ? ` ${variantLabel(displayVariant)}` : ""}
               </p>
             </div>
             <strong>x{displayCount || 0}</strong>

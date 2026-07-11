@@ -8,6 +8,8 @@ const emptyForm = {
   rarity: "Comun",
   image: "",
   imageFile: null,
+  alternativeImage: "",
+  alternativeImageFile: null,
   description: "",
   flavor: "",
 };
@@ -33,7 +35,7 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
   }, [form.expansionId, selectedExpansionId]);
 
   const previewCard = useMemo(() => {
-    const variant = previewVariant === "holo" ? "holo" : "normal";
+    const variant = previewVariant === "holo" || previewVariant === "alternative" ? previewVariant : "normal";
     return withCardVariant(
       {
         id: "preview",
@@ -41,6 +43,7 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
         type: "",
         rarity: form.rarity,
         image: form.image,
+        alternativeImage: form.alternativeImage || form.image,
         description: form.description || "Descripcion de la carta.",
         flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
         author: creatorName || "Creador anonimo",
@@ -61,12 +64,23 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
     setForm((current) => ({ ...current, image: preview, imageFile: file || null }));
   }
 
+  async function handleAlternativeImageChange(event) {
+    const file = event.target.files?.[0];
+    const preview = file ? await resizeImageFile(file) : "";
+    setForm((current) => ({ ...current, alternativeImage: preview, alternativeImageFile: file || null }));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
 
     if (!form.imageFile) {
       setError("La imagen es obligatoria.");
+      return;
+    }
+
+    if (!form.alternativeImageFile) {
+      setError("La imagen alternativa es obligatoria.");
       return;
     }
 
@@ -83,6 +97,7 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
         type: "",
         rarity: form.rarity,
         imageFile: form.imageFile,
+        alternativeImageFile: form.alternativeImageFile,
         expansionId: currentExpansionId,
         description: form.description.trim(),
         flavor: form.flavor.trim(),
@@ -131,6 +146,10 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleImageChange} />
           </label>
           <label>
+            Imagen alternativa *
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleAlternativeImageChange} />
+          </label>
+          <label>
             Descripcion *
             <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
           </label>
@@ -160,6 +179,13 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
               onClick={() => setPreviewVariant("holo")}
             >
               Holo
+            </button>
+            <button
+              className={`filter-button ${previewVariant === "alternative" ? "active" : ""}`}
+              type="button"
+              onClick={() => setPreviewVariant("alternative")}
+            >
+              Alternativa
             </button>
           </div>
           <div id="previewCard">

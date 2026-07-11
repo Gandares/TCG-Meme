@@ -116,6 +116,9 @@ export async function createCard(card, token) {
   if (card.imageFile) {
     body.set("image", card.imageFile);
   }
+  if (card.alternativeImageFile) {
+    body.set("alternativeImage", card.alternativeImageFile);
+  }
 
   const response = await fetch(`${API_BASE}/api/cards`, {
     method: "POST",

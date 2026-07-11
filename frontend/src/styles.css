@@ -731,6 +731,19 @@ button {
     0 0 20px rgba(92, 168, 232, 0.1);
 }
 
+.card-alternative {
+  display: block;
+  padding: 0;
+}
+
+.card-alternative .card-art {
+  z-index: 0;
+}
+
+.card-alternative .holo-layer {
+  z-index: 1;
+}
+
 .holo-layer {
   --v-space: 5%;
   --v-angle: 133deg;

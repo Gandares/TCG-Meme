@@ -13,7 +13,7 @@ export const rarityOrder = {
 };
 
 export const raritySteps = ["Comun", "Rara", "Epica", "Legendaria"];
-export const cardVariants = ["normal", "holo"];
+export const cardVariants = ["normal", "holo", "alternative"];
 
 export function rarityClass(rarity) {
   return `rarity-${String(rarity || "Comun").toLowerCase()}`;
@@ -24,12 +24,25 @@ export function nextRarity(rarity) {
   return index >= 0 && index < raritySteps.length - 1 ? raritySteps[index + 1] : null;
 }
 
+export function advanceRarity(rarity, steps = 1) {
+  const index = raritySteps.indexOf(rarity);
+  if (index < 0) {
+    return rarity || "Comun";
+  }
+
+  return raritySteps[Math.min(raritySteps.length - 1, index + steps)];
+}
+
 export function effectiveRarity(card, variant = "normal") {
-  return variant === "holo" ? nextRarity(card.rarity) || card.rarity : card.rarity;
+  if (variant === "alternative") {
+    return advanceRarity(card.rarity, 2);
+  }
+
+  return variant === "holo" ? advanceRarity(card.rarity, 1) : card.rarity;
 }
 
 export function withCardVariant(card, variant = "normal") {
-  const normalizedVariant = variant === "holo" ? "holo" : "normal";
+  const normalizedVariant = cardVariants.includes(variant) ? variant : "normal";
   return {
     ...card,
     variant: normalizedVariant,
@@ -38,11 +51,19 @@ export function withCardVariant(card, variant = "normal") {
 }
 
 export function variantLabel(variant) {
-  return variant === "holo" ? "Holo" : "Normal";
+  if (variant === "holo") {
+    return "Holo";
+  }
+
+  return variant === "alternative" ? "Alternativa" : "Normal";
 }
 
 export function collectionKey(cardId, variant = "normal") {
-  return variant === "holo" ? `${cardId}:holo` : `${cardId}:normal`;
+  if (variant === "holo") {
+    return `${cardId}:holo`;
+  }
+
+  return variant === "alternative" ? `${cardId}:alternative` : `${cardId}:normal`;
 }
 
 export function getCollectionCount(collection, cardId, variant = "normal") {
@@ -50,11 +71,11 @@ export function getCollectionCount(collection, cardId, variant = "normal") {
     return (Number(collection[collectionKey(cardId, "normal")]) || 0) + (Number(collection[cardId]) || 0);
   }
 
-  return Number(collection[collectionKey(cardId, "holo")]) || 0;
+  return Number(collection[collectionKey(cardId, variant)]) || 0;
 }
 
 export function getOwnedVariantCount(collection, cardId) {
-  return getCollectionCount(collection, cardId, "normal") + getCollectionCount(collection, cardId, "holo");
+  return cardVariants.reduce((sum, variant) => sum + getCollectionCount(collection, cardId, variant), 0);
 }
 
 export function compareByRarity(firstCard, secondCard) {

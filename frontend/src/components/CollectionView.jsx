@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
-import { compareByRarity, getCollectionCount, getOwnedVariantCount, withCardVariant } from "../utils/cards";
+import { cardVariants, compareByRarity, getCollectionCount, getOwnedVariantCount, withCardVariant } from "../utils/cards";
 
 const rarities = ["all", "Comun", "Rara", "Epica", "Legendaria"];
 
@@ -92,10 +92,8 @@ export function CollectionView({ cards, collection, expansions = [] }) {
       <div className="card-grid">
         {filteredCards.length ? (
           filteredCards.map((card) => {
-            const normalCount = getCollectionCount(collection, card.id, "normal");
-            const holoCount = getCollectionCount(collection, card.id, "holo");
-            const ownedCount = normalCount + holoCount;
-            const previewVariant = normalCount > 0 ? "normal" : holoCount > 0 ? "holo" : "normal";
+            const ownedCount = getOwnedVariantCount(collection, card.id);
+            const previewVariant = cardVariants.find((variant) => getCollectionCount(collection, card.id, variant) > 0) || "normal";
             const isLocked = ownedCount <= 0;
 
             return (

@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 const port = Number(process.env.PORT) || 3001;
-const host = process.env.HOST || "127.0.0.1";
+const host = process.env.HOST || (process.env.RAILWAY_ENVIRONMENT ? "0.0.0.0" : "127.0.0.1");
 const projectRoot = path.resolve(__dirname, "..");
 const dataDir = path.join(projectRoot, "data");
 const assetsDir = path.join(projectRoot, "assets");
@@ -160,6 +160,7 @@ function ensureStorage() {
   }
   migrateCardsToDefaultExpansion();
   migrateCardIdsToExpansionNameFormat();
+  migrateAlternativeImages();
 }
 
 function readCards() {
@@ -267,6 +268,14 @@ function migrateCardIdsToExpansionNameFormat() {
 
   writeCards(migratedCards);
   migrateUserCardReferences(idMap);
+}
+
+function migrateAlternativeImages() {
+  const cards = readCardsFromFile(cardsFile).map(normalizeCardExpansion);
+  const needsMigration = cards.some((card) => !card.alternativeImage);
+  if (needsMigration) {
+    writeCards(cards.map((card) => ({ ...card, alternativeImage: card.alternativeImage || card.image })));
+  }
 }
 
 function migrateUserCardReferences(idMap) {
@@ -536,17 +545,25 @@ function weightedRandomCard(cards) {
     Legendaria: 3,
   };
   const candidates = cards.flatMap((card) => {
-    return [withCardVariant(card, "normal"), withCardVariant(card, "holo")];
+    return [withCardVariant(card, "normal"), withCardVariant(card, "holo"), withCardVariant(card, "alternative")];
   });
   const available = candidates.flatMap((card) => Array(weights[card.displayRarity] || 10).fill(card));
   return available[Math.floor(Math.random() * available.length)];
 }
 
 function collectionKey(cardId, variant = "normal") {
-  return variant === "holo" ? `${cardId}:holo` : `${cardId}:normal`;
+  if (variant === "holo") {
+    return `${cardId}:holo`;
+  }
+
+  return variant === "alternative" ? `${cardId}:alternative` : `${cardId}:normal`;
 }
 
 function parseCollectionKey(key) {
+  if (String(key).endsWith(":alternative")) {
+    return { cardId: String(key).slice(0, -12), variant: "alternative" };
+  }
+
   if (String(key).endsWith(":holo")) {
     return { cardId: String(key).slice(0, -5), variant: "holo" };
   }
@@ -559,18 +576,26 @@ function parseCollectionKey(key) {
 }
 
 function withCardVariant(card, variant = "normal") {
-  const normalizedVariant = variant === "holo" ? "holo" : "normal";
+  const normalizedVariant = ["normal", "holo", "alternative"].includes(variant) ? variant : "normal";
   return {
     ...card,
     variant: normalizedVariant,
-    displayRarity: normalizedVariant === "holo" ? nextRarity(card.rarity) || card.rarity : card.rarity,
+    displayRarity: effectiveRarity(card.rarity, normalizedVariant),
   };
 }
 
-function nextRarity(rarity) {
+function effectiveRarity(rarity, variant = "normal") {
+  if (variant === "alternative") {
+    return advanceRarity(rarity, 2);
+  }
+
+  return variant === "holo" ? advanceRarity(rarity, 1) : rarity;
+}
+
+function advanceRarity(rarity, steps = 1) {
   const rarities = ["Comun", "Rara", "Epica", "Legendaria"];
   const index = rarities.indexOf(rarity);
-  return index >= 0 && index < rarities.length - 1 ? rarities[index + 1] : null;
+  return index >= 0 ? rarities[Math.min(rarities.length - 1, index + steps)] : rarity || "Comun";
 }
 
 function readRequestBody(request) {
@@ -681,6 +706,9 @@ function createCard(payload, user) {
   if (!payload.image) {
     throw new Error("La imagen es obligatoria.");
   }
+  if (!payload.alternativeImage) {
+    throw new Error("La imagen alternativa es obligatoria.");
+  }
   if (!description) {
     throw new Error("La descripcion es obligatoria.");
   }
@@ -701,6 +729,7 @@ function createCard(payload, user) {
     expansionId: expansion.id,
     expansion,
     image: saveImage(id, payload.image),
+    alternativeImage: saveImage(id, payload.alternativeImage, "alternative"),
     description,
     flavor: cleanText(payload.flavor, 120),
     author: cleanText(user?.username, 28) || "Creador anonimo",
@@ -714,13 +743,13 @@ function cardNameExistsInExpansion(name, expansionId) {
     .some((card) => card.expansionId === expansionId && normalizeNameKey(card.name) === normalizedName);
 }
 
-function saveImage(id, imageData) {
+function saveImage(id, imageData, suffix = "") {
   if (!imageData) {
     return "";
   }
 
   if (imageData.buffer && imageData.mimeType) {
-    return saveImageBuffer(id, imageData.buffer, imageData.mimeType);
+    return saveImageBuffer(id, imageData.buffer, imageData.mimeType, suffix);
   }
 
   if (typeof imageData === "string" && !imageData.startsWith("data:image/")) {
@@ -738,12 +767,12 @@ function saveImage(id, imageData) {
     "image/webp": "webp",
     "image/gif": "gif",
   };
-  const filename = `${id}.${extensionByMime[match[1]]}`;
+  const filename = `${imageFilenameBase(id, suffix)}.${extensionByMime[match[1]]}`;
   fs.writeFileSync(path.join(uploadsDir, filename), Buffer.from(match[2], "base64"));
   return `assets/uploads/${filename}`;
 }
 
-function saveImageBuffer(id, buffer, mimeType) {
+function saveImageBuffer(id, buffer, mimeType, suffix = "") {
   const extensionByMime = {
     "image/png": "png",
     "image/jpeg": "jpg",
@@ -755,9 +784,13 @@ function saveImageBuffer(id, buffer, mimeType) {
     throw new Error("Formato de imagen no soportado.");
   }
 
-  const filename = `${id}.${extension}`;
+  const filename = `${imageFilenameBase(id, suffix)}.${extension}`;
   fs.writeFileSync(path.join(uploadsDir, filename), buffer);
   return `assets/uploads/${filename}`;
+}
+
+function imageFilenameBase(id, suffix = "") {
+  return suffix ? `${id}-${cleanSlug(suffix)}` : id;
 }
 
 function serveAsset(urlPath, response) {
