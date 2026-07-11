@@ -109,20 +109,24 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
           </label>
           <label>
             Rareza *
-            <select value={form.rarity} onChange={(event) => updateField("rarity", event.target.value)}>
-              <option>Comun</option>
-              <option>Rara</option>
-              <option>Epica</option>
-              <option>Legendaria</option>
-            </select>
+            <span className="select-shell">
+              <select value={form.rarity} onChange={(event) => updateField("rarity", event.target.value)}>
+                <option>Comun</option>
+                <option>Rara</option>
+                <option>Epica</option>
+                <option>Legendaria</option>
+              </select>
+            </span>
           </label>
           <label>
             Expansion *
-            <select value={currentExpansionId} required onChange={(event) => updateField("expansionId", event.target.value)}>
-              {expansions.map((expansion) => (
-                <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
-              ))}
-            </select>
+            <span className="select-shell">
+              <select value={currentExpansionId} required onChange={(event) => updateField("expansionId", event.target.value)}>
+                {expansions.map((expansion) => (
+                  <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
+                ))}
+              </select>
+            </span>
           </label>
           <label>
             Imagen *

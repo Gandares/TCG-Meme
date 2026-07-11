@@ -94,11 +94,13 @@ export function PackOpening({
         </div>
         <label className="select-control">
           Expansion
-          <select value={selectedExpansionId} onChange={(event) => onExpansionChange?.(event.target.value)}>
-            {expansions.map((expansion) => (
-              <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
-            ))}
-          </select>
+          <span className="select-shell">
+            <select value={selectedExpansionId} onChange={(event) => onExpansionChange?.(event.target.value)}>
+              {expansions.map((expansion) => (
+                <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
+              ))}
+            </select>
+          </span>
         </label>
       </div>
 
