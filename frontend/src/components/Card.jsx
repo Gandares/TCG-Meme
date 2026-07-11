@@ -28,13 +28,8 @@ export function Card({ card, count, locked = false }) {
 
   if (locked) {
     return (
-      <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+      <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} aria-label="Carta no desbloqueada" onPointerMove={handleTilt} onPointerLeave={resetTilt}>
         <div className="card-back-pattern" />
-        <div className="card-back-mark" aria-hidden="true">✦</div>
-        <div className="card-back-copy">
-          <strong>Carta oculta</strong>
-          <span>No desbloqueada</span>
-        </div>
       </article>
     );
   }
