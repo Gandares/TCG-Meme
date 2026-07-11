@@ -14,6 +14,8 @@ export default function App() {
   const [pulls, setPulls] = useState([]);
   const [recentPulls, setRecentPulls] = useState([]);
   const [openedPacks, setOpenedPacks] = useState(0);
+  const [currency, setCurrency] = useState(0);
+  const [packCost, setPackCost] = useState(100);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function App() {
           setCollection(userCollection.collection || {});
           setOpenedPacks(Number(userCollection.openedPacks) || 0);
           setRecentPulls(userCollection.recentPulls || []);
+          setCurrency(Number(userCollection.currency) || 0);
+          setPackCost(Number(userCollection.packCost) || 100);
         }
       })
       .catch(() => {
@@ -42,13 +46,26 @@ export default function App() {
     };
   }, [auth?.token]);
 
+  useEffect(() => {
+    if (!auth?.token) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrency((currentCurrency) => Math.min(500, currentCurrency + 1));
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, [auth?.token]);
+
   const stats = useMemo(
     () => ({
       totalCards: cards.length,
       ownedCards: Object.values(collection).reduce((sum, count) => sum + (Number(count) || 0), 0),
       openedPacks,
+      currency,
     }),
-    [cards, collection, openedPacks],
+    [cards, collection, currency, openedPacks],
   );
 
   function handleAuthenticated(nextAuth) {
@@ -64,12 +81,19 @@ export default function App() {
     setPulls([]);
     setRecentPulls([]);
     setOpenedPacks(0);
+    setCurrency(0);
+    setPackCost(100);
     setActiveView("packs");
   }
 
   async function handleOpenPack() {
     if (!cards.length) {
       setActiveView("creator");
+      return;
+    }
+
+    if (currency < packCost) {
+      setError(`Necesitas ${packCost} monedas para abrir un sobre.`);
       return;
     }
 
@@ -81,6 +105,8 @@ export default function App() {
       setRecentPulls(pack.recentPulls || []);
       setCollection(pack.collection || {});
       setOpenedPacks(Number(pack.openedPacks) || 0);
+      setCurrency(Number(pack.currency) || 0);
+      setPackCost(Number(pack.packCost) || packCost);
     } catch (packError) {
       setError(packError.message || "No se pudo abrir el sobre.");
     }
@@ -102,7 +128,15 @@ export default function App() {
       <main className="main-content">
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         {activeView === "packs" ? (
-          <PackOpening cards={cards} pulls={pulls} recentPulls={recentPulls} onOpenPack={handleOpenPack} onDismissReveal={() => setPulls([])} />
+          <PackOpening
+            cards={cards}
+            currency={currency}
+            packCost={packCost}
+            pulls={pulls}
+            recentPulls={recentPulls}
+            onOpenPack={handleOpenPack}
+            onDismissReveal={() => setPulls([])}
+          />
         ) : null}
         {activeView === "collection" ? <CollectionView cards={cards} collection={collection} /> : null}
         {activeView === "creator" ? <CardCreator user={auth.user} onCreateCard={handleCreateCard} /> : null}

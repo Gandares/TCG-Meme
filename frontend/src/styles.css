@@ -145,6 +145,31 @@ button {
   background: var(--panel);
 }
 
+.currency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgba(242, 201, 76, 0.42);
+  border-radius: 999px;
+  background: rgba(242, 201, 76, 0.1);
+  color: #ffe6a3;
+  font-weight: 900;
+}
+
+.currency-pill img,
+.pack-price img {
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+}
+
+.currency-pill small {
+  color: rgba(255, 230, 163, 0.66);
+  font-size: 0.72rem;
+}
+
 .tab-button,
 .filter-button,
 .ghost-button {
@@ -391,6 +416,18 @@ button {
 .pack-copy p {
   max-width: 24rem;
   margin-inline: auto;
+}
+
+.pack-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.2rem auto 0.55rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(242, 201, 76, 0.44);
+  border-radius: 999px;
+  background: rgba(242, 201, 76, 0.1);
+  color: #ffe6a3;
 }
 
 .card-grid {

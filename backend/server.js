@@ -13,6 +13,9 @@ const cardsFile = path.join(dataDir, "card.json");
 const legacyCardsFile = path.join(dataDir, "cards.json");
 const usersFile = path.join(dataDir, "users.json");
 const tokenSecret = "tcg-meme-local-dev-secret";
+const currencyMax = 500;
+const currencyIntervalMs = 10_000;
+const packCost = 100;
 
 const contentTypes = {
   ".json": "application/json; charset=utf-8",
@@ -92,10 +95,13 @@ const server = http.createServer(async (request, response) => {
   if (requestUrl.pathname === "/api/collection" && request.method === "GET") {
     try {
       const user = requireUser(request);
+      const refreshedUser = refreshUserCurrency(user.username);
       sendJson(response, {
-        collection: user.collection || {},
-        openedPacks: Number(user.openedPacks) || 0,
-        recentPulls: resolveRecentPulls(user.recentPulls || []),
+        collection: refreshedUser.collection || {},
+        openedPacks: Number(refreshedUser.openedPacks) || 0,
+        recentPulls: resolveRecentPulls(refreshedUser.recentPulls || []),
+        currency: publicCurrency(refreshedUser),
+        packCost,
       });
     } catch (error) {
       sendJson(response, { error: error.message }, 401);
@@ -199,6 +205,8 @@ function registerUser(payload) {
     collection: {},
     openedPacks: 0,
     recentPulls: [],
+    currency: 0,
+    currencyUpdatedAt: Date.now(),
   };
   users.push(user);
   writeUsers(users);
@@ -227,6 +235,7 @@ function publicUser(user) {
     username: user.username,
     collection: user.collection || {},
     openedPacks: Number(user.openedPacks) || 0,
+    currency: publicCurrency(user),
   };
 }
 
@@ -282,6 +291,17 @@ function updateUser(username, updater) {
   return users[index];
 }
 
+function refreshUserCurrency(username) {
+  return updateUser(username, (user) => {
+    const currencyState = applyCurrencyRegen(user);
+    return {
+      ...user,
+      currency: currencyState.currency,
+      currencyUpdatedAt: currencyState.updatedAt,
+    };
+  });
+}
+
 function openPackForUser(username) {
   const cards = readCards();
   if (!cards.length) {
@@ -289,6 +309,10 @@ function openPackForUser(username) {
   }
   const pulls = Array.from({ length: 5 }, () => weightedRandomCard(cards));
   const updatedUser = updateUser(username, (user) => {
+    const currencyState = applyCurrencyRegen(user);
+    if (currencyState.currency < packCost) {
+      throw new Error(`Necesitas ${packCost} monedas para abrir un sobre.`);
+    }
     const collection = { ...(user.collection || {}) };
     for (const card of pulls) {
       const key = collectionKey(card.id, card.variant);
@@ -303,6 +327,8 @@ function openPackForUser(username) {
       collection,
       openedPacks: (Number(user.openedPacks) || 0) + 1,
       recentPulls,
+      currency: currencyState.currency - packCost,
+      currencyUpdatedAt: currencyState.updatedAt,
     };
   });
 
@@ -311,7 +337,36 @@ function openPackForUser(username) {
     collection: updatedUser.collection || {},
     openedPacks: Number(updatedUser.openedPacks) || 0,
     recentPulls: resolveRecentPulls(updatedUser.recentPulls || []),
+    currency: publicCurrency(updatedUser),
+    packCost,
   };
+}
+
+function publicCurrency(user) {
+  const currencyState = applyCurrencyRegen(user);
+  return currencyState.currency;
+}
+
+function applyCurrencyRegen(user) {
+  const now = Date.now();
+  const currentCurrency = clampCurrency(user.currency);
+  const updatedAt = Number(user.currencyUpdatedAt) || now;
+  if (currentCurrency >= currencyMax) {
+    return { currency: currencyMax, updatedAt: now };
+  }
+
+  const earned = Math.max(0, Math.floor((now - updatedAt) / currencyIntervalMs));
+  if (!earned) {
+    return { currency: currentCurrency, updatedAt };
+  }
+
+  const nextCurrency = clampCurrency(currentCurrency + earned);
+  const nextUpdatedAt = nextCurrency >= currencyMax ? now : updatedAt + earned * currencyIntervalMs;
+  return { currency: nextCurrency, updatedAt: nextUpdatedAt };
+}
+
+function clampCurrency(value) {
+  return Math.min(currencyMax, Math.max(0, Math.floor(Number(value) || 0)));
 }
 
 function resolveRecentPulls(cardIds) {

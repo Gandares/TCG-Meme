@@ -3,11 +3,13 @@ import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
 import { withCardVariant } from "../utils/cards";
 
-export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDismissReveal }) {
+export function PackOpening({ cards, currency = 0, packCost = 100, pulls, recentPulls = [], onOpenPack, onDismissReveal }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-  const canOpen = cards.length > 0;
+  const hasCards = cards.length > 0;
+  const canAfford = currency >= packCost;
+  const canOpen = hasCards && canAfford;
 
   useEffect(() => {
     if (pulls.length) {
@@ -95,7 +97,17 @@ export function PackOpening({ cards, pulls, recentPulls = [], onOpenPack, onDism
         </button>
         <div className="pack-copy">
           <h3>{isOpening ? "Abriendo sobre..." : "Toca el sobre"}</h3>
-          <p>{canOpen ? "Haz click sobre el sobre para revelar 5 cartas." : "Crea al menos una carta para empezar."}</p>
+          <div className="pack-price" aria-label={`Coste ${packCost} monedas`}>
+            <img src="/assets/arcane-coin.png" alt="" />
+            <strong>{packCost}</strong>
+          </div>
+          <p>
+            {!hasCards
+              ? "Crea al menos una carta para empezar."
+              : canAfford
+                ? "Haz click sobre el sobre para revelar 5 cartas."
+                : `Necesitas ${packCost} monedas para abrir un sobre.`}
+          </p>
         </div>
       </div>
 

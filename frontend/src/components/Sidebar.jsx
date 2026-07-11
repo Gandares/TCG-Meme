@@ -16,7 +16,14 @@ export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
       </div>
 
       <div className="user-panel">
-        <strong>{user.username}</strong>
+        <div>
+          <strong>{user.username}</strong>
+          <div className="currency-pill" aria-label={`${stats.currency} monedas`}>
+            <img src="/assets/arcane-coin.png" alt="" />
+            <span>{stats.currency}</span>
+            <small>/ 500</small>
+          </div>
+        </div>
         <button className="ghost-button" type="button" onClick={onLogout}>Salir</button>
       </div>
 
