@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "./Card";
+import { CustomSelect } from "./CustomSelect";
 import { resizeImageFile, withCardVariant } from "../utils/cards";
 
 const emptyForm = {
@@ -10,6 +11,11 @@ const emptyForm = {
   description: "",
   flavor: "",
 };
+
+const rarityOptions = ["Comun", "Rara", "Epica", "Legendaria"].map((rarity) => ({
+  value: rarity,
+  label: rarity,
+}));
 
 export function CardCreator({ user, expansions = [], selectedExpansionId = "", onCreateCard }) {
   const [form, setForm] = useState({ ...emptyForm, expansionId: selectedExpansionId });
@@ -109,24 +115,16 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
           </label>
           <label>
             Rareza *
-            <span className="select-shell">
-              <select value={form.rarity} onChange={(event) => updateField("rarity", event.target.value)}>
-                <option>Comun</option>
-                <option>Rara</option>
-                <option>Epica</option>
-                <option>Legendaria</option>
-              </select>
-            </span>
+            <CustomSelect label="Rareza" options={rarityOptions} value={form.rarity} onChange={(value) => updateField("rarity", value)} />
           </label>
           <label>
             Expansion *
-            <span className="select-shell">
-              <select value={currentExpansionId} required onChange={(event) => updateField("expansionId", event.target.value)}>
-                {expansions.map((expansion) => (
-                  <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
-                ))}
-              </select>
-            </span>
+            <CustomSelect
+              label="Expansion"
+              options={expansions.map((expansion) => ({ value: expansion.id, label: expansion.name }))}
+              value={currentExpansionId}
+              onChange={(value) => updateField("expansionId", value)}
+            />
           </label>
           <label>
             Imagen *

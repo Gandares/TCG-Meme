@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
+import { CustomSelect } from "./CustomSelect";
 import { assetUrl } from "../api/cards";
 import { withCardVariant } from "../utils/cards";
 
@@ -94,13 +95,12 @@ export function PackOpening({
         </div>
         <label className="select-control">
           Expansion
-          <span className="select-shell">
-            <select value={selectedExpansionId} onChange={(event) => onExpansionChange?.(event.target.value)}>
-              {expansions.map((expansion) => (
-                <option value={expansion.id} key={expansion.id}>{expansion.name}</option>
-              ))}
-            </select>
-          </span>
+          <CustomSelect
+            label="Expansion"
+            options={expansions.map((expansion) => ({ value: expansion.id, label: expansion.name }))}
+            value={selectedExpansionId}
+            onChange={onExpansionChange}
+          />
         </label>
       </div>
 
