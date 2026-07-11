@@ -21,7 +21,6 @@ export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
           <div className="currency-pill" aria-label={`${stats.currency} monedas`}>
             <img src="/assets/arcane-coin.png" alt="" />
             <span>{stats.currency}</span>
-            {stats.currency <= 500 ? <small>/ 500</small> : null}
           </div>
         </div>
         <button className="ghost-button" type="button" onClick={onLogout}>Salir</button>
