@@ -47,6 +47,14 @@ const server = http.createServer(async (request, response) => {
 
   const requestUrl = new URL(request.url, `http://${host}:${port}`);
 
+  if ((requestUrl.pathname === "/" || requestUrl.pathname === "/health") && request.method === "GET") {
+    sendJson(response, {
+      status: "ok",
+      service: "tcg-meme-backend",
+    });
+    return;
+  }
+
   if (requestUrl.pathname === "/api/auth/register" && request.method === "POST") {
     try {
       const payload = await readJsonBody(request);
