@@ -1,12 +1,9 @@
-import { assetUrl } from "../api/cards";
-
-export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
+export function Sidebar({ activeView, stats, onViewChange }) {
   const tabs = [
     ["packs", "PK", "Sobres"],
     ["collection", "CL", "Coleccion"],
     ["creator", "+", "Crear carta"],
   ];
-  const coinImage = assetUrl("assets/arcane-coin.png");
 
   return (
     <aside className="sidebar">
@@ -18,17 +15,6 @@ export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
           <h1>TCG Meme</h1>
           <p>Crea cartas, abre sobres, completa tu coleccion.</p>
         </div>
-      </div>
-
-      <div className="user-panel">
-        <div>
-          <strong>{user.username}</strong>
-          <div className="currency-pill" aria-label={`${stats.currency} monedas`}>
-            <img src={coinImage} alt="" />
-            <span>{stats.currency}</span>
-          </div>
-        </div>
-        <button className="ghost-button" type="button" onClick={onLogout}>Salir</button>
       </div>
 
       <nav className="tabs" aria-label="Secciones">

@@ -143,7 +143,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar activeView={activeView} stats={stats} user={auth.user} onLogout={handleLogout} onViewChange={setActiveView} />
+      <Sidebar activeView={activeView} stats={stats} onViewChange={setActiveView} />
       <main className="main-content">
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         {activeView === "packs" ? (
@@ -151,13 +151,15 @@ export default function App() {
             cards={cards.filter((card) => card.expansionId === selectedExpansionId)}
             expansions={expansions}
             selectedExpansionId={selectedExpansionId}
-            onExpansionChange={setSelectedExpansionId}
+            user={auth.user}
+            stats={stats}
             currency={currency}
             packCost={packCost}
             pulls={pulls}
             recentPulls={recentPulls}
             onOpenPack={handleOpenPack}
             onDismissReveal={() => setPulls([])}
+            onLogout={handleLogout}
           />
         ) : null}
         {activeView === "collection" ? <CollectionView cards={cards} collection={collection} expansions={expansions} /> : null}

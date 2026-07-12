@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card } from "./Card";
 import { CardDetailModal } from "./CardDetailModal";
-import { CustomSelect } from "./CustomSelect";
 import { assetUrl } from "../api/cards";
 import { withCardVariant } from "../utils/cards";
 
@@ -9,13 +8,15 @@ export function PackOpening({
   cards,
   expansions = [],
   selectedExpansionId = "",
-  onExpansionChange,
+  user,
+  stats,
   currency = 0,
   packCost = 100,
   pulls,
   recentPulls = [],
   onOpenPack,
   onDismissReveal,
+  onLogout,
 }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
@@ -92,17 +93,18 @@ export function PackOpening({
       <div className="view-header">
         <div>
           <h2 id="packsTitle">Apertura de sobre</h2>
-          <p>El sobre reparte 5 cartas de la expansion seleccionada.</p>
+          <p>El sobre reparte 5 cartas de la expansión actual.</p>
         </div>
-        <label className="select-control">
-          Expansion
-          <CustomSelect
-            label="Expansion"
-            options={expansions.map((expansion) => ({ value: expansion.id, label: expansion.name }))}
-            value={selectedExpansionId}
-            onChange={onExpansionChange}
-          />
-        </label>
+        <div className="user-panel header-user-panel">
+          <div>
+            <strong>{user?.username}</strong>
+            <div className="currency-pill" aria-label={`${stats?.currency || 0} monedas`}>
+              <img src={coinImage} alt="" />
+              <span>{stats?.currency || 0}</span>
+            </div>
+          </div>
+          <button className="ghost-button" type="button" onClick={onLogout}>Salir</button>
+        </div>
       </div>
 
       <div className="pack-stage">
@@ -134,7 +136,7 @@ export function PackOpening({
           </div>
           <p>
             {!hasCards
-              ? "Crea al menos una carta en esta expansion para empezar."
+              ? "Crea al menos una carta en esta expansión para empezar."
               : canAfford
                 ? "Haz click sobre el sobre para revelar 5 cartas."
                 : `Necesitas ${packCost} monedas para abrir un sobre.`}

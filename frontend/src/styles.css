@@ -154,6 +154,11 @@ button {
   background: var(--panel);
 }
 
+.header-user-panel {
+  width: min(100%, 19rem);
+  justify-self: end;
+}
+
 .currency-pill {
   display: inline-flex;
   align-items: center;
@@ -1609,6 +1614,11 @@ button {
 
   .view-header {
     display: grid;
+  }
+
+  .header-user-panel {
+    width: 100%;
+    justify-self: stretch;
   }
 
   .view-header h2 {
