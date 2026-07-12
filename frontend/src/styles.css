@@ -730,14 +730,6 @@ button {
   height: 100%;
 }
 
-.reveal-back .tcg-card {
-  --rarity-color: rgba(247, 210, 129, 0.48);
-  --rarity-glow: transparent;
-  --card-shadow:
-    0 28px 60px rgba(0, 0, 0, 0.44),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
 .reveal-front {
   transform: rotateY(180deg);
 }
@@ -803,6 +795,14 @@ button {
 .card-locked {
   background: #111315;
   opacity: 1;
+}
+
+.reveal-back .tcg-card.card-locked {
+  --rarity-color: transparent;
+  --rarity-glow: transparent;
+  --card-shadow: 0 28px 60px rgba(0, 0, 0, 0.44);
+  border-color: transparent;
+  box-shadow: var(--card-shadow);
 }
 
 .card-locked::before,
