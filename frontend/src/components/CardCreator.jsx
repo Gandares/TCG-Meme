@@ -44,8 +44,8 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
         rarity: form.rarity,
         image: form.image,
         alternativeImage: form.alternativeImage || form.image,
-        description: form.description || "Descripcion de la carta.",
-        flavor: form.flavor || "\"Aqui iria una frase con personalidad.\"",
+        description: form.description || "Descripción de la carta.",
+        flavor: form.flavor || "\"comentario\"",
         author: creatorName || "Creador anonimo",
         expansionId: currentExpansionId,
         expansion: currentExpansion,
@@ -85,7 +85,7 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
     }
 
     if (!form.description.trim()) {
-      setError("La descripcion es obligatoria.");
+      setError("La descripción es obligatoria.");
       return;
     }
 
@@ -126,16 +126,16 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
         <form className="editor-form" onSubmit={handleSubmit}>
           <label>
             Nombre *
-            <input type="text" maxLength="28" placeholder="Ej. Caballero del WiFi" required value={form.name} onChange={(event) => updateField("name", event.target.value)} />
+            <input type="text" maxLength="28" placeholder="Nombre de la carta" required value={form.name} onChange={(event) => updateField("name", event.target.value)} />
           </label>
           <label>
             Rareza *
             <CustomSelect label="Rareza" options={rarityOptions} value={form.rarity} onChange={(value) => updateField("rarity", value)} />
           </label>
           <label>
-            Expansion *
+            Expansión *
             <CustomSelect
-              label="Expansion"
+              label="Expansión"
               options={expansions.map((expansion) => ({ value: expansion.id, label: expansion.name }))}
               value={currentExpansionId}
               onChange={(value) => updateField("expansionId", value)}
@@ -150,11 +150,11 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleAlternativeImageChange} />
           </label>
           <label>
-            Descripcion *
+            Descripción *
             <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
           </label>
           <label>
-            Flavour text
+            Texto "flavour"
             <textarea maxLength="120" rows="3" placeholder="Una frase narrativa o graciosa" value={form.flavor} onChange={(event) => updateField("flavor", event.target.value)} />
           </label>
           <label>
