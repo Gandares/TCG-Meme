@@ -220,10 +220,11 @@ export function PackOpening({
             {pulls.map((card, index) => {
               const displayCard = withCardVariant(card, card.variant || "normal");
               const isRevealed = revealedCards.has(index);
+              const isLegendaryReveal = isRevealed && displayCard.displayRarity === "Legendaria";
               return (
               <div className="deal-card reveal-card" style={{ animationDelay: `${index * 90}ms` }} key={`${card.id}-${displayCard.variant}-${index}`}>
                 <button
-                  className={`reveal-flip-card ${isRevealed ? "revealed" : ""}`}
+                  className={`reveal-flip-card ${isRevealed ? "revealed" : ""} ${isLegendaryReveal ? "legendary-reveal" : ""}`}
                   type="button"
                   aria-label={isRevealed ? `Ver detalle de ${displayCard.name}` : "Dar la vuelta a la carta"}
                   onClick={(event) => {
@@ -244,6 +245,13 @@ export function PackOpening({
                       <Card card={displayCard} />
                     </span>
                   </span>
+                  {isLegendaryReveal ? (
+                    <span className="legendary-reveal-effect" aria-hidden="true">
+                      {Array.from({ length: 10 }, (_, sparkIndex) => (
+                        <span key={sparkIndex} style={{ "--spark-index": sparkIndex }} />
+                      ))}
+                    </span>
+                  ) : null}
                 </button>
               </div>
               );
