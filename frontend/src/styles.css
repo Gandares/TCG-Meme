@@ -660,6 +660,34 @@ button {
   width: min(100%, 68rem);
 }
 
+.skip-reveal-button {
+  position: fixed;
+  top: clamp(1rem, 3vw, 2rem);
+  right: clamp(1rem, 3vw, 2rem);
+  z-index: 22;
+  min-height: 2.6rem;
+  padding: 0 1rem;
+  border: 1px solid rgba(247, 210, 129, 0.52);
+  border-radius: 8px;
+  background: rgba(18, 20, 22, 0.82);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
+}
+
+.skip-reveal-button:hover:not(:disabled) {
+  border-color: rgba(247, 210, 129, 0.86);
+  background: rgba(34, 31, 24, 0.9);
+}
+
+.skip-reveal-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
 .reveal-card .tcg-card {
   min-height: 17rem;
   --card-shadow:
@@ -700,6 +728,14 @@ button {
 
 .reveal-face .tcg-card {
   height: 100%;
+}
+
+.reveal-back .tcg-card {
+  --rarity-color: rgba(247, 210, 129, 0.48);
+  --rarity-glow: transparent;
+  --card-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.44),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .reveal-front {

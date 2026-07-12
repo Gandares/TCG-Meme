@@ -30,6 +30,7 @@ export function PackOpening({
   const canChangeExpansion = expansions.length > 1;
   const packImage = assetUrl(selectedExpansion?.packImage);
   const coinImage = assetUrl("assets/arcane-coin.png");
+  const allCardsRevealed = pulls.length > 0 && revealedCards.size >= pulls.length;
 
   useEffect(() => {
     if (pulls.length && !isOpening) {
@@ -95,8 +96,12 @@ export function PackOpening({
     });
   }
 
+  function revealAllCards() {
+    setRevealedCards(new Set(pulls.map((_, index) => index)));
+  }
+
   function dismissReveal() {
-    if (revealedCards.size < pulls.length) {
+    if (!allCardsRevealed) {
       return;
     }
 
@@ -198,7 +203,19 @@ export function PackOpening({
       </section>
 
       {isRevealVisible ? (
-        <div className={`pack-reveal-overlay ${revealedCards.size >= pulls.length ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onMouseDown={dismissReveal}>
+        <div className={`pack-reveal-overlay ${allCardsRevealed ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onMouseDown={dismissReveal}>
+          <button
+            className="skip-reveal-button"
+            type="button"
+            disabled={allCardsRevealed}
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              revealAllCards();
+            }}
+          >
+            Saltar
+          </button>
           <div className="pack-reveal-grid" aria-live="polite" onMouseDown={(event) => event.stopPropagation()}>
             {pulls.map((card, index) => {
               const displayCard = withCardVariant(card, card.variant || "normal");
