@@ -151,6 +151,7 @@ export default function App() {
             cards={cards.filter((card) => card.expansionId === selectedExpansionId)}
             expansions={expansions}
             selectedExpansionId={selectedExpansionId}
+            onExpansionChange={setSelectedExpansionId}
             user={auth.user}
             stats={stats}
             currency={currency}

@@ -8,6 +8,7 @@ export function PackOpening({
   cards,
   expansions = [],
   selectedExpansionId = "",
+  onExpansionChange,
   user,
   stats,
   currency = 0,
@@ -25,6 +26,7 @@ export function PackOpening({
   const canAfford = currency >= packCost;
   const canOpen = hasCards && canAfford;
   const selectedExpansion = expansions.find((expansion) => expansion.id === selectedExpansionId) || expansions[0];
+  const canChangeExpansion = expansions.length > 1;
   const packImage = assetUrl(selectedExpansion?.packImage);
   const coinImage = assetUrl("assets/arcane-coin.png");
 
@@ -84,6 +86,16 @@ export function PackOpening({
     }, 880);
   }
 
+  function handleExpansionStep(direction) {
+    if (!canChangeExpansion || !selectedExpansion?.id) {
+      return;
+    }
+
+    const currentIndex = Math.max(0, expansions.findIndex((expansion) => expansion.id === selectedExpansion.id));
+    const nextIndex = (currentIndex + direction + expansions.length) % expansions.length;
+    onExpansionChange?.(expansions[nextIndex].id);
+  }
+
   function countInCurrentPack(cardId, variant = "normal") {
     return pulls.filter((card) => card.id === cardId && (card.variant || "normal") === variant).length || 1;
   }
@@ -108,27 +120,48 @@ export function PackOpening({
       </div>
 
       <div className="pack-stage">
-        <button
-          className={`pack-art${isOpening ? " opening" : ""}`}
-          type="button"
-          aria-label="Abrir sobre"
-          disabled={!canOpen || isOpening}
-          onClick={handlePackClick}
-        >
-          <span className="pack-seal pack-seal-top" />
-          <span className="pack-image" style={packImage ? { backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.22)), url("${packImage}")` } : undefined} />
-          <span className="pack-rim" />
-          <span className="pack-shine" />
-          <span className="pack-count">5 cartas</span>
-          <span className="pack-burst" aria-hidden="true" />
-          <span className="pack-shards" aria-hidden="true">
-            {Array.from({ length: 12 }, (_, index) => (
-              <span key={index} style={{ "--shard-index": index }} />
-            ))}
-          </span>
-          <span className="pack-seal pack-seal-bottom" />
-        </button>
+        <div className="pack-display">
+          <button
+            className="pack-arrow"
+            type="button"
+            aria-label="Expansión anterior"
+            disabled={!canChangeExpansion || isOpening}
+            onClick={() => handleExpansionStep(-1)}
+          >
+            ‹
+          </button>
+          <button
+            className={`pack-art${isOpening ? " opening" : ""}`}
+            type="button"
+            aria-label="Abrir sobre"
+            disabled={!canOpen || isOpening}
+            onClick={handlePackClick}
+          >
+            <span className="pack-seal pack-seal-top" />
+            <span className="pack-image" style={packImage ? { backgroundImage: `linear-gradient(180deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.22)), url("${packImage}")` } : undefined} />
+            <span className="pack-rim" />
+            <span className="pack-shine" />
+            <span className="pack-count">5 cartas</span>
+            <span className="pack-burst" aria-hidden="true" />
+            <span className="pack-shards" aria-hidden="true">
+              {Array.from({ length: 12 }, (_, index) => (
+                <span key={index} style={{ "--shard-index": index }} />
+              ))}
+            </span>
+            <span className="pack-seal pack-seal-bottom" />
+          </button>
+          <button
+            className="pack-arrow"
+            type="button"
+            aria-label="Expansión siguiente"
+            disabled={!canChangeExpansion || isOpening}
+            onClick={() => handleExpansionStep(1)}
+          >
+            ›
+          </button>
+        </div>
         <div className="pack-copy">
+          <span className="pack-expansion-name">{selectedExpansion?.name || "Sin expansión"}</span>
           <h3>{isOpening ? "Abriendo sobre..." : "Toca el sobre"}</h3>
           <div className="pack-price" aria-label={`Coste ${packCost} monedas`}>
             <img src={coinImage} alt="" />
