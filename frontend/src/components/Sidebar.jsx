@@ -11,7 +11,9 @@ export function Sidebar({ activeView, stats, user, onLogout, onViewChange }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">TCG</div>
+        <div className="brand-mark">
+          <img src="/arcane-icon.png" alt="" />
+        </div>
         <div>
           <h1>TCG Meme</h1>
           <p>Crea cartas, abre sobres, completa tu coleccion.</p>
