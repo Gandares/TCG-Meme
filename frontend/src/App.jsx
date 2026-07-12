@@ -126,6 +126,7 @@ export default function App() {
       setOpenedPacks(Number(pack.openedPacks) || 0);
       setCurrency(Number(pack.currency) || 0);
       setPackCost(Number(pack.packCost) || packCost);
+      return pack;
     } catch (packError) {
       setError(packError.message || "No se pudo abrir el sobre.");
     }

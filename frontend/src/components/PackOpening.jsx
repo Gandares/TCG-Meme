@@ -21,6 +21,7 @@ export function PackOpening({
 }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
+  const [revealedCards, setRevealedCards] = useState(() => new Set());
   const [selectedCard, setSelectedCard] = useState(null);
   const hasCards = cards.length > 0;
   const canAfford = currency >= packCost;
@@ -31,30 +32,14 @@ export function PackOpening({
   const coinImage = assetUrl("assets/arcane-coin.png");
 
   useEffect(() => {
-    if (pulls.length) {
+    if (pulls.length && !isOpening) {
       setIsRevealVisible(true);
     }
-  }, [pulls]);
+  }, [isOpening, pulls]);
 
   useEffect(() => {
-    if (!isRevealVisible || selectedCard) {
-      return undefined;
-    }
-
-    function dismissReveal() {
-      setIsRevealVisible(false);
-      setSelectedCard(null);
-      onDismissReveal?.();
-    }
-
-    window.addEventListener("click", dismissReveal);
-    window.addEventListener("keydown", dismissReveal);
-
-    return () => {
-      window.removeEventListener("click", dismissReveal);
-      window.removeEventListener("keydown", dismissReveal);
-    };
-  }, [isRevealVisible, selectedCard]);
+    setRevealedCards(new Set());
+  }, [pulls]);
 
   useEffect(() => {
     if (!selectedCard) {
@@ -77,13 +62,15 @@ export function PackOpening({
     }
 
     setIsOpening(true);
-    window.setTimeout(async () => {
-      try {
-        await onOpenPack();
-      } finally {
+    const startedAt = Date.now();
+    try {
+      await onOpenPack();
+    } finally {
+      const remainingAnimationMs = Math.max(0, 880 - (Date.now() - startedAt));
+      window.setTimeout(() => {
         setIsOpening(false);
-      }
-    }, 880);
+      }, remainingAnimationMs);
+    }
   }
 
   function handleExpansionStep(direction) {
@@ -98,6 +85,24 @@ export function PackOpening({
 
   function countInCurrentPack(cardId, variant = "normal") {
     return pulls.filter((card) => card.id === cardId && (card.variant || "normal") === variant).length || 1;
+  }
+
+  function revealCard(index) {
+    setRevealedCards((current) => {
+      const next = new Set(current);
+      next.add(index);
+      return next;
+    });
+  }
+
+  function dismissReveal() {
+    if (revealedCards.size < pulls.length) {
+      return;
+    }
+
+    setIsRevealVisible(false);
+    setSelectedCard(null);
+    onDismissReveal?.();
   }
 
   return (
@@ -193,21 +198,35 @@ export function PackOpening({
       </section>
 
       {isRevealVisible ? (
-        <div className="pack-reveal-overlay" role="dialog" aria-modal="true" aria-label="Cartas abiertas">
-          <div className="pack-reveal-grid" aria-live="polite">
+        <div className={`pack-reveal-overlay ${revealedCards.size >= pulls.length ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onMouseDown={dismissReveal}>
+          <div className="pack-reveal-grid" aria-live="polite" onMouseDown={(event) => event.stopPropagation()}>
             {pulls.map((card, index) => {
               const displayCard = withCardVariant(card, card.variant || "normal");
+              const isRevealed = revealedCards.has(index);
               return (
               <div className="deal-card reveal-card" style={{ animationDelay: `${index * 90}ms` }} key={`${card.id}-${displayCard.variant}-${index}`}>
                 <button
-                  className="card-button"
+                  className={`reveal-flip-card ${isRevealed ? "revealed" : ""}`}
                   type="button"
+                  aria-label={isRevealed ? `Ver detalle de ${displayCard.name}` : "Dar la vuelta a la carta"}
                   onClick={(event) => {
                     event.stopPropagation();
-                    setSelectedCard(displayCard);
+                    if (isRevealed) {
+                      setSelectedCard(displayCard);
+                      return;
+                    }
+
+                    revealCard(index);
                   }}
                 >
-                  <Card card={displayCard} />
+                  <span className="reveal-flip-inner">
+                    <span className="reveal-face reveal-back">
+                      <Card card={displayCard} locked />
+                    </span>
+                    <span className="reveal-face reveal-front">
+                      <Card card={displayCard} />
+                    </span>
+                  </span>
                 </button>
               </div>
               );
