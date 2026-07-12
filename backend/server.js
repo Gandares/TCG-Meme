@@ -19,7 +19,7 @@ const currencyIntervalMs = 10_000;
 const packCost = 100;
 const defaultExpansion = {
   id: "prueba",
-  name: "Prueba",
+  name: "Mágicas psiquiátricas",
   packImage: "assets/pack-tavern.png",
   cardBackImage: "assets/card-back-fantasy.png",
 };
