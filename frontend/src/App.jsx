@@ -165,13 +165,15 @@ export default function App() {
   const visibleExpansions = expansions.filter((expansion) => joinedExpansionIds.includes(expansion.id));
   const visibleExpansionIds = new Set(visibleExpansions.map((expansion) => expansion.id));
   const visibleCards = cards.filter((card) => visibleExpansionIds.has(card.expansionId));
+  const canCreateCards = visibleExpansions.length > 0;
+  const currentView = activeView === "creator" && !canCreateCards ? "packs" : activeView;
 
   return (
     <div className="app-shell">
-      <Sidebar activeView={activeView} stats={stats} onViewChange={setActiveView} />
+      <Sidebar activeView={currentView} stats={stats} onViewChange={setActiveView} canCreateCards={canCreateCards} />
       <main className="main-content">
         {error ? <div className="form-error" role="alert">{error}</div> : null}
-        {activeView === "packs" ? (
+        {currentView === "packs" ? (
           <PackOpening
             cards={visibleCards.filter((card) => card.expansionId === selectedExpansionId)}
             expansions={visibleExpansions}
@@ -189,8 +191,8 @@ export default function App() {
             onJoinExpansion={handleJoinExpansion}
           />
         ) : null}
-        {activeView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} /> : null}
-        {activeView === "creator" ? <CardCreator user={auth.user} expansions={visibleExpansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
+        {currentView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} /> : null}
+        {currentView === "creator" ? <CardCreator user={auth.user} expansions={visibleExpansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
       </main>
     </div>
   );
