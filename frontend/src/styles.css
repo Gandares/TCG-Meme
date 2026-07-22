@@ -233,6 +233,15 @@ button {
   color: #b7f7c8;
 }
 
+.pack-empty-state {
+  min-height: clamp(16rem, 42vh, 28rem);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 900;
+}
+
 .currency-pill {
   display: inline-flex;
   align-items: center;

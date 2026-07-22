@@ -34,6 +34,7 @@ export function PackOpening({
   const canOpen = hasCards && canAfford;
   const selectedExpansion = expansions.find((expansion) => expansion.id === selectedExpansionId) || expansions[0];
   const canChangeExpansion = expansions.length > 1;
+  const hasJoinedExpansions = expansions.length > 0;
   const packImage = assetUrl(selectedExpansion?.packImage);
   const coinImage = assetUrl("assets/arcane-coin.png");
   const allCardsRevealed = pulls.length > 0 && revealedCards.size >= pulls.length;
@@ -190,6 +191,8 @@ export function PackOpening({
         </div>
       </div>
 
+      {hasJoinedExpansions ? (
+        <>
       <div className="pack-stage">
         <div className="pack-display">
           <button
@@ -262,6 +265,10 @@ export function PackOpening({
           <p className="empty-state">Abre un sobre para ver aqui tus ultimas cartas.</p>
         )}
       </section>
+        </>
+      ) : (
+        <div className="empty-state pack-empty-state">Inserta un codigo de expansion desde tu usuario para desbloquear sobres.</div>
+      )}
 
       {isRevealVisible ? (
         <div className={`pack-reveal-overlay ${allCardsRevealed ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onClick={dismissReveal}>
