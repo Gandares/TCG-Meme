@@ -167,12 +167,13 @@ function ensureStorage() {
     fs.writeFileSync(cardsFile, `${JSON.stringify(legacyCards, null, 2)}\n`, "utf8");
   }
   if (!fs.existsSync(expansionsFile)) {
-    writeExpansions([defaultExpansion]);
+    writeExpansions([createDefaultExpansion()]);
   }
   if (!fs.existsSync(usersFile)) {
     fs.writeFileSync(usersFile, "[]\n", "utf8");
   }
   migrateCardsToDefaultExpansion();
+  migrateExpansionsToUniqueIds();
   migrateAlternativeImages();
   migrateCardIdsToUniqueExpansionFormat();
   migrateUsersToUniqueCollections();
@@ -221,11 +222,20 @@ function writeExpansions(expansions) {
   fs.writeFileSync(expansionsFile, `${JSON.stringify(expansions.map(normalizeExpansion), null, 2)}\n`, "utf8");
 }
 
+function createDefaultExpansion() {
+  return {
+    ...defaultExpansion,
+    id: createUniqueEntityId("expansion"),
+    legacyId: defaultExpansion.id,
+  };
+}
+
 function normalizeExpansion(expansion) {
   return {
     ...defaultExpansion,
     ...expansion,
-    id: cleanSlug(expansion?.id) || defaultExpansion.id,
+    id: cleanEntityId(expansion?.id) || defaultExpansion.id,
+    legacyId: cleanSlug(expansion?.legacyId) || undefined,
     name: cleanText(expansion?.name, 40) || defaultExpansion.name,
     packImage: cleanText(expansion?.packImage, 160) || defaultExpansion.packImage,
     cardBackImage: cleanText(expansion?.cardBackImage, 160) || defaultExpansion.cardBackImage,
@@ -235,7 +245,7 @@ function normalizeExpansion(expansion) {
 function normalizeCardExpansion(card) {
   return {
     ...card,
-    expansionId: cleanSlug(card.expansionId) || defaultExpansion.id,
+    expansionId: cleanEntityId(card.expansionId) || defaultExpansion.id,
   };
 }
 
@@ -252,6 +262,70 @@ function migrateCardsToDefaultExpansion() {
   const needsMigration = cards.some((card) => !card.expansionId);
   if (needsMigration) {
     writeCards(cards.map(normalizeCardExpansion));
+  }
+}
+
+function migrateExpansionsToUniqueIds() {
+  const expansions = readExpansions();
+  const usedIds = new Set();
+  const expansionIdMap = new Map();
+  let changed = false;
+  const migratedExpansions = expansions.map((expansion) => {
+    const currentId = cleanEntityId(expansion.id);
+    let nextId = currentId;
+    if (!isGeneratedEntityId(currentId, "expansion") || usedIds.has(currentId)) {
+      nextId = createUniqueEntityId("expansion");
+      changed = true;
+    }
+    usedIds.add(nextId);
+
+    if (nextId !== currentId) {
+      expansionIdMap.set(currentId, nextId);
+    }
+
+    const previousLegacyId = cleanSlug(expansion.legacyId);
+    const legacyId = previousLegacyId || (nextId !== currentId ? cleanSlug(currentId) : "");
+    if (legacyId && legacyId !== nextId) {
+      expansionIdMap.set(legacyId, nextId);
+    }
+    if (legacyId !== (expansion.legacyId || "")) {
+      changed = true;
+    }
+
+    return {
+      ...expansion,
+      id: nextId,
+      ...(legacyId ? { legacyId } : {}),
+    };
+  });
+
+  if (!changed && !expansionIdMap.size) {
+    return;
+  }
+
+  writeExpansions(migratedExpansions);
+  migrateCardExpansionReferences(expansionIdMap);
+}
+
+function migrateCardExpansionReferences(expansionIdMap) {
+  if (!expansionIdMap.size) {
+    return;
+  }
+
+  const cards = readCardsFromFile(cardsFile);
+  let changed = false;
+  const migratedCards = cards.map((card) => {
+    const nextExpansionId = expansionIdMap.get(card.expansionId) || card.expansionId;
+    if (nextExpansionId !== card.expansionId) {
+      changed = true;
+      return { ...card, expansionId: nextExpansionId };
+    }
+
+    return card;
+  });
+
+  if (changed) {
+    writeCards(migratedCards);
   }
 }
 
@@ -424,6 +498,10 @@ function ensureUniqueEntityId(value, prefix, usedIds = new Set()) {
 function createUniqueEntityId(prefix) {
   const safePrefix = cleanSlug(prefix) || "entity";
   return `${safePrefix}_${crypto.randomUUID()}`;
+}
+
+function isGeneratedEntityId(value, prefix) {
+  return cleanEntityId(value).startsWith(`${cleanSlug(prefix)}_`);
 }
 
 function cleanEntityId(value) {
@@ -622,7 +700,7 @@ function openPackForUser(username, expansionId = defaultExpansion.id) {
 }
 
 function findExpansion(expansionId) {
-  const normalizedId = cleanSlug(expansionId) || defaultExpansion.id;
+  const normalizedId = cleanEntityId(expansionId) || defaultExpansion.id;
   const expansion = readExpansions().find((item) => item.id === normalizedId);
   if (!expansion) {
     throw new Error("Expansion no encontrada.");
@@ -992,13 +1070,13 @@ function cleanSlug(value) {
 }
 
 function createCardId(expansion, cardUid) {
-  const expansionId = cleanSlug(expansion?.id);
+  const expansionId = cleanEntityId(expansion?.id);
   const normalizedCardUid = cleanEntityId(cardUid);
   return expansionId && normalizedCardUid ? `${expansionId}-${normalizedCardUid}` : "";
 }
 
 function extractCardUidFromId(cardId, expansionId) {
-  const prefix = `${cleanSlug(expansionId)}-`;
+  const prefix = `${cleanEntityId(expansionId)}-`;
   const id = String(cardId || "");
   if (!id.startsWith(prefix)) {
     return "";
