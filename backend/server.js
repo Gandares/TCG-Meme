@@ -173,9 +173,8 @@ function ensureStorage() {
     fs.writeFileSync(usersFile, "[]\n", "utf8");
   }
   migrateCardsToDefaultExpansion();
-  migrateCardIdsToExpansionNameFormat();
   migrateAlternativeImages();
-  migrateCardsToUniqueIds();
+  migrateCardIdsToUniqueExpansionFormat();
   migrateUsersToUniqueCollections();
 }
 
@@ -256,34 +255,44 @@ function migrateCardsToDefaultExpansion() {
   }
 }
 
-function migrateCardIdsToExpansionNameFormat() {
+function migrateCardIdsToUniqueExpansionFormat() {
   const expansionsById = new Map(readExpansions().map((expansion) => [expansion.id, expansion]));
+  const usedUids = new Set();
   const usedIds = new Set();
   const idMap = new Map();
   const cards = readCardsFromFile(cardsFile).map(normalizeCardExpansion);
   const migratedCards = cards.map((card) => {
     const expansion = expansionsById.get(card.expansionId) || defaultExpansion;
-    const expectedId = createCardId(expansion, card.name);
-    if (!expectedId || usedIds.has(expectedId)) {
-      usedIds.add(card.id);
-      return card;
+    let uid = cleanEntityId(card.uid) || extractCardUidFromId(card.id, expansion.id) || createUniqueEntityId("card");
+    if (usedUids.has(uid)) {
+      uid = createUniqueEntityId("card");
     }
+    usedUids.add(uid);
 
+    let expectedId = createCardId(expansion, uid);
+    while (usedIds.has(expectedId)) {
+      uid = createUniqueEntityId("card");
+      expectedId = createCardId(expansion, uid);
+    }
     usedIds.add(expectedId);
+
     if (card.id === expectedId) {
-      return card;
+      return { ...card, uid };
     }
 
     idMap.set(card.id, expectedId);
-    return { ...card, id: expectedId };
+    return { ...card, id: expectedId, uid };
   });
 
-  if (!idMap.size) {
+  const changed = idMap.size || migratedCards.some((card, index) => card.uid !== cards[index].uid);
+  if (!changed) {
     return;
   }
 
   writeCards(migratedCards);
-  migrateUserCardReferences(idMap);
+  if (idMap.size) {
+    migrateUserCardReferences(idMap);
+  }
 }
 
 function migrateAlternativeImages() {
@@ -291,23 +300,6 @@ function migrateAlternativeImages() {
   const needsMigration = cards.some((card) => !card.alternativeImage);
   if (needsMigration) {
     writeCards(cards.map((card) => ({ ...card, alternativeImage: card.alternativeImage || card.image })));
-  }
-}
-
-function migrateCardsToUniqueIds() {
-  const usedUids = new Set();
-  let changed = false;
-  const cards = readCardsFromFile(cardsFile).map((card) => {
-    const uid = ensureUniqueEntityId(card.uid, "card", usedUids);
-    if (uid !== card.uid) {
-      changed = true;
-    }
-
-    return { ...card, uid };
-  });
-
-  if (changed) {
-    writeCards(cards);
   }
 }
 
@@ -856,14 +848,15 @@ function createCard(payload, user) {
     throw new Error("Ya existe una carta con ese nombre en esta expansion.");
   }
 
-  const id = createCardId(expansion, name);
+  const uid = createUniqueEntityId("card");
+  const id = createCardId(expansion, uid);
   if (!id) {
     throw new Error("No se pudo generar el id de la carta.");
   }
 
   return {
     id,
-    uid: createUniqueEntityId("card"),
+    uid,
     name,
     type: "",
     rarity: normalizeRarity(payload.rarity),
@@ -998,10 +991,21 @@ function cleanSlug(value) {
     .slice(0, 40);
 }
 
-function createCardId(expansion, cardName) {
-  const expansionSlug = cleanSlug(expansion?.name || expansion?.id);
-  const cardSlug = cleanSlug(cardName);
-  return expansionSlug && cardSlug ? `${expansionSlug}-${cardSlug}` : "";
+function createCardId(expansion, cardUid) {
+  const expansionId = cleanSlug(expansion?.id);
+  const normalizedCardUid = cleanEntityId(cardUid);
+  return expansionId && normalizedCardUid ? `${expansionId}-${normalizedCardUid}` : "";
+}
+
+function extractCardUidFromId(cardId, expansionId) {
+  const prefix = `${cleanSlug(expansionId)}-`;
+  const id = String(cardId || "");
+  if (!id.startsWith(prefix)) {
+    return "";
+  }
+
+  const uid = cleanEntityId(id.slice(prefix.length));
+  return uid.startsWith("card_") ? uid : "";
 }
 
 function normalizeNameKey(value) {
