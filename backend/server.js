@@ -17,6 +17,8 @@ const tokenSecret = "tcg-meme-local-dev-secret";
 const currencyMax = 500;
 const currencyIntervalMs = 10_000;
 const packCost = 100;
+const joinCodeLength = 6;
+const joinCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const defaultExpansion = {
   id: "prueba",
   name: "Mágicas psiquiátricas",
@@ -93,7 +95,18 @@ const server = http.createServer(async (request, response) => {
   }
 
   if (requestUrl.pathname === "/api/expansions" && request.method === "GET") {
-    sendJson(response, readExpansions());
+    sendJson(response, readExpansions().map(publicExpansion));
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/expansions/join" && request.method === "POST") {
+    try {
+      const user = requireUser(request);
+      const payload = await readJsonBody(request);
+      sendJson(response, joinExpansionByCode(user.username, payload.code));
+    } catch (error) {
+      sendJson(response, { error: error.message || "No se pudo unir la expansion." }, 400);
+    }
     return;
   }
 
@@ -120,6 +133,7 @@ const server = http.createServer(async (request, response) => {
         collectionId: refreshedUser.collectionId,
         collection: refreshedUser.collection || {},
         collectionItems: refreshedUser.collectionItems || [],
+        joinedExpansionIds: refreshedUser.joinedExpansionIds || [],
         openedPacks: Number(refreshedUser.openedPacks) || 0,
         recentPulls: resolveRecentPulls(refreshedUser.recentPulls || []),
         currency: publicCurrency(refreshedUser),
@@ -174,6 +188,7 @@ function ensureStorage() {
   }
   migrateCardsToDefaultExpansion();
   migrateExpansionsToUniqueIds();
+  migrateExpansionJoinCodes();
   migrateAlternativeImages();
   migrateCardIdsToUniqueExpansionFormat();
   migrateUsersToUniqueCollections();
@@ -226,6 +241,7 @@ function createDefaultExpansion() {
   return {
     ...defaultExpansion,
     id: createUniqueEntityId("expansion"),
+    joinCode: createUniqueJoinCode(new Set()),
   };
 }
 
@@ -235,6 +251,17 @@ function normalizeExpansion(expansion) {
     name: cleanText(expansion?.name, 40) || defaultExpansion.name,
     packImage: cleanText(expansion?.packImage, 160) || defaultExpansion.packImage,
     cardBackImage: cleanText(expansion?.cardBackImage, 160) || defaultExpansion.cardBackImage,
+    joinCode: cleanJoinCode(expansion?.joinCode),
+  };
+}
+
+function publicExpansion(expansion) {
+  const normalizedExpansion = normalizeExpansion(expansion);
+  return {
+    id: normalizedExpansion.id,
+    name: normalizedExpansion.name,
+    packImage: normalizedExpansion.packImage,
+    cardBackImage: normalizedExpansion.cardBackImage,
   };
 }
 
@@ -315,6 +342,27 @@ function migrateCardExpansionReferences(expansionIdMap) {
   }
 }
 
+function migrateExpansionJoinCodes() {
+  const usedCodes = new Set();
+  let changed = false;
+  const expansions = readExpansions().map((expansion) => {
+    let joinCode = cleanJoinCode(expansion.joinCode);
+    if (!joinCode || usedCodes.has(joinCode)) {
+      joinCode = createUniqueJoinCode(usedCodes);
+      changed = true;
+    }
+    usedCodes.add(joinCode);
+    if (joinCode !== expansion.joinCode) {
+      changed = true;
+    }
+    return { ...expansion, joinCode };
+  });
+
+  if (changed) {
+    writeExpansions(expansions);
+  }
+}
+
 function migrateCardIdsToUniqueExpansionFormat() {
   const expansionsById = new Map(readExpansions().map((expansion) => [expansion.id, expansion]));
   const usedUids = new Set();
@@ -367,11 +415,16 @@ function migrateUsersToUniqueCollections() {
   const users = readUsers();
   const usedCollectionIds = new Set();
   const usedCollectionItemIds = new Set();
+  const expansionIds = readExpansions().map((expansion) => expansion.id);
   let changed = false;
   const migratedUsers = users.map((user) => {
-    const migratedUser = normalizeUserCollectionEntities(user, usedCollectionIds, usedCollectionItemIds);
+    const userWithJoinedExpansions = Array.isArray(user.joinedExpansionIds)
+      ? user
+      : { ...user, joinedExpansionIds: expansionIds };
+    const migratedUser = normalizeUserCollectionEntities(userWithJoinedExpansions, usedCollectionIds, usedCollectionItemIds);
     if (
       migratedUser.collectionId !== user.collectionId ||
+      JSON.stringify(migratedUser.joinedExpansionIds || []) !== JSON.stringify(user.joinedExpansionIds || []) ||
       JSON.stringify(migratedUser.collection || {}) !== JSON.stringify(user.collection || {}) ||
       JSON.stringify(migratedUser.collectionItems || []) !== JSON.stringify(user.collectionItems || [])
     ) {
@@ -421,9 +474,13 @@ function migrateUserCardReferences(idMap) {
 function normalizeUserCollectionEntities(user, usedCollectionIds = new Set(), usedCollectionItemIds = new Set()) {
   const baseCollection = Object.keys(user.collection || {}).length ? user.collection : collectionItemsToMap(user.collectionItems || []);
   const collection = normalizeCollectionMap(baseCollection);
+  const validExpansionIds = new Set(readExpansions().map((expansion) => expansion.id));
+  const joinedExpansionIds = [...new Set((user.joinedExpansionIds || []).map(cleanEntityId))]
+    .filter((expansionId) => validExpansionIds.has(expansionId));
   return {
     ...user,
     collectionId: ensureUniqueEntityId(user.collectionId, "collection", usedCollectionIds),
+    joinedExpansionIds,
     collection,
     collectionItems: createCollectionItems(collection, user.collectionItems || [], usedCollectionItemIds),
   };
@@ -535,6 +592,7 @@ function registerUser(payload) {
     salt,
     passwordHash: hashPassword(password, salt),
     collectionId: createUniqueEntityId("collection"),
+    joinedExpansionIds: [],
     collection: {},
     collectionItems: [],
     openedPacks: 0,
@@ -571,6 +629,7 @@ function publicUser(user) {
     collectionId: normalizedUser.collectionId,
     collection: normalizedUser.collection,
     collectionItems: normalizedUser.collectionItems,
+    joinedExpansionIds: normalizedUser.joinedExpansionIds || [],
     openedPacks: Number(normalizedUser.openedPacks) || 0,
     currency: publicCurrency(normalizedUser),
   };
@@ -641,6 +700,10 @@ function refreshUserCurrency(username) {
 
 function openPackForUser(username, expansionId = defaultExpansion.id) {
   const expansion = findExpansion(expansionId);
+  const currentUser = normalizeUserCollectionEntities(readUsers().find((user) => user.username === username) || {});
+  if (!userHasExpansion(currentUser, expansion.id)) {
+    throw new Error("No te has unido a esta expansion.");
+  }
   const cards = readCards().filter((card) => card.expansionId === expansion.id);
   if (!cards.length) {
     throw new Error("No hay cartas disponibles en esta expansion.");
@@ -681,7 +744,7 @@ function openPackForUser(username, expansionId = defaultExpansion.id) {
     recentPulls: resolveRecentPulls(updatedUser.recentPulls || []),
     currency: publicCurrency(updatedUser),
     packCost,
-    expansion,
+    expansion: publicExpansion(expansion),
   };
 }
 
@@ -692,6 +755,33 @@ function findExpansion(expansionId) {
     throw new Error("Expansion no encontrada.");
   }
   return expansion;
+}
+
+function joinExpansionByCode(username, rawCode) {
+  const code = cleanJoinCode(rawCode);
+  if (!code) {
+    throw new Error("Introduce un codigo de union valido.");
+  }
+
+  const expansion = readExpansions().find((item) => item.joinCode === code);
+  if (!expansion) {
+    throw new Error("Codigo de union no encontrado.");
+  }
+
+  const updatedUser = updateUser(username, (user) => ({
+    ...user,
+    joinedExpansionIds: [...new Set([...(user.joinedExpansionIds || []), expansion.id])],
+  }));
+
+  return {
+    expansion: publicExpansion(expansion),
+    joinedExpansionIds: updatedUser.joinedExpansionIds || [],
+    user: publicUser(updatedUser),
+  };
+}
+
+function userHasExpansion(user, expansionId) {
+  return (user.joinedExpansionIds || []).includes(expansionId);
 }
 
 function publicCurrency(user) {
@@ -896,6 +986,9 @@ function createCard(payload, user) {
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 130);
   const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
+  if (!userHasExpansion(normalizeUserCollectionEntities(user), expansion.id)) {
+    throw new Error("No te has unido a esta expansion.");
+  }
   if (!name) {
     throw new Error("El titulo es obligatorio.");
   }
@@ -1070,6 +1163,21 @@ function extractCardUidFromId(cardId, expansionId) {
 
   const uid = cleanEntityId(id.slice(prefix.length));
   return uid.startsWith("card_") ? uid : "";
+}
+
+function cleanJoinCode(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, joinCodeLength);
+}
+
+function createUniqueJoinCode(usedCodes) {
+  let code = "";
+  do {
+    code = Array.from({ length: joinCodeLength }, () => joinCodeAlphabet[crypto.randomInt(joinCodeAlphabet.length)]).join("");
+  } while (usedCodes.has(code));
+  return code;
 }
 
 function normalizeNameKey(value) {

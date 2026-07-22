@@ -159,16 +159,78 @@ button {
   justify-self: end;
 }
 
-.header-user-panel > div {
+.user-summary-button {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .header-user-panel .currency-pill {
   justify-self: end;
   margin-top: 0;
+}
+
+.user-menu {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.join-code-form {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.join-code-form label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.join-code-form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+}
+
+.join-code-form input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(9, 10, 12, 0.72);
+  color: var(--text);
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.72rem 0.8rem;
+}
+
+.join-code-form .primary-button {
+  min-height: 2.55rem;
+  padding-inline: 0.85rem;
+}
+
+.join-code-error,
+.join-code-success {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.join-code-error {
+  color: #ffb3a6;
+}
+
+.join-code-success {
+  color: #b7f7c8;
 }
 
 .currency-pill {
@@ -1957,7 +2019,7 @@ button {
     padding: 0.65rem;
   }
 
-  .header-user-panel > div {
+  .user-summary-button {
     gap: 0.5rem;
   }
 

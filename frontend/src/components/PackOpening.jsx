@@ -18,11 +18,17 @@ export function PackOpening({
   onOpenPack,
   onDismissReveal,
   onLogout,
+  onJoinExpansion,
 }) {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealVisible, setIsRevealVisible] = useState(false);
   const [revealedCards, setRevealedCards] = useState(() => new Set());
   const [selectedCard, setSelectedCard] = useState(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [joinMessage, setJoinMessage] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
   const hasCards = cards.length > 0;
   const canAfford = currency >= packCost;
   const canOpen = hasCards && canAfford;
@@ -110,6 +116,28 @@ export function PackOpening({
     onDismissReveal?.();
   }
 
+  async function handleJoinSubmit(event) {
+    event.preventDefault();
+    const code = joinCode.trim();
+    if (!code) {
+      setJoinError("Introduce un codigo.");
+      return;
+    }
+
+    setJoinError("");
+    setJoinMessage("");
+    setIsJoining(true);
+    try {
+      const result = await onJoinExpansion?.(code);
+      setJoinCode("");
+      setJoinMessage(result?.expansion?.name ? `Te uniste a ${result.expansion.name}.` : "Expansion anadida.");
+    } catch (error) {
+      setJoinError(error.message || "No se pudo unir la expansion.");
+    } finally {
+      setIsJoining(false);
+    }
+  }
+
   return (
     <section className="view active" aria-labelledby="packsTitle">
       <div className="view-header">
@@ -117,15 +145,44 @@ export function PackOpening({
           <h2 id="packsTitle">Apertura de sobre</h2>
           <p>El sobre reparte 5 cartas de la expansión actual.</p>
         </div>
-        <div className="user-panel header-user-panel">
-          <div>
+        <div className={`user-panel header-user-panel ${isUserMenuOpen ? "open" : ""}`}>
+          <button
+            className="user-summary-button"
+            type="button"
+            aria-expanded={isUserMenuOpen}
+            onClick={() => setIsUserMenuOpen((current) => !current)}
+          >
             <strong>{user?.username}</strong>
             <div className="currency-pill" aria-label={`${stats?.currency || 0} monedas`}>
               <img src={coinImage} alt="" />
               <span>{stats?.currency || 0}</span>
             </div>
-          </div>
-          <button className="ghost-button" type="button" onClick={onLogout}>Salir</button>
+          </button>
+          {isUserMenuOpen ? (
+            <div className="user-menu">
+              <form className="join-code-form" onSubmit={handleJoinSubmit}>
+                <label htmlFor="joinCode">Codigo de union</label>
+                <div>
+                  <input
+                    id="joinCode"
+                    type="text"
+                    inputMode="text"
+                    autoComplete="off"
+                    maxLength="6"
+                    placeholder="ABC123"
+                    value={joinCode}
+                    onChange={(event) => setJoinCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
+                  />
+                  <button className="primary-button" type="submit" disabled={isJoining}>
+                    {isJoining ? "..." : "Unir"}
+                  </button>
+                </div>
+                {joinError ? <span className="join-code-error">{joinError}</span> : null}
+                {joinMessage ? <span className="join-code-success">{joinMessage}</span> : null}
+              </form>
+              <button className="ghost-button" type="button" onClick={onLogout}>Cerrar sesion</button>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, loadAuth, openPack, saveAuth } from "./api/cards";
+import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, joinExpansion, loadAuth, openPack, saveAuth } from "./api/cards";
 import { AuthView } from "./components/AuthView";
 import { CardCreator } from "./components/CardCreator";
 import { CollectionView } from "./components/CollectionView";
@@ -11,6 +11,7 @@ export default function App() {
   const [activeView, setActiveView] = useState("packs");
   const [cards, setCards] = useState([]);
   const [expansions, setExpansions] = useState([]);
+  const [joinedExpansionIds, setJoinedExpansionIds] = useState([]);
   const [selectedExpansionId, setSelectedExpansionId] = useState("");
   const [collection, setCollection] = useState({});
   const [pulls, setPulls] = useState([]);
@@ -31,12 +32,15 @@ export default function App() {
         if (isMounted) {
           setCards(serverCards);
           setExpansions(serverExpansions);
+          setJoinedExpansionIds(userCollection.joinedExpansionIds || []);
           setSelectedExpansionId((currentExpansionId) => {
-            if (serverExpansions.some((expansion) => expansion.id === currentExpansionId)) {
+            const joinedIds = userCollection.joinedExpansionIds || [];
+            const visibleExpansions = serverExpansions.filter((expansion) => joinedIds.includes(expansion.id));
+            if (visibleExpansions.some((expansion) => expansion.id === currentExpansionId)) {
               return currentExpansionId;
             }
 
-            return serverExpansions[0]?.id || "";
+            return visibleExpansions[0]?.id || "";
           });
           setCollection(userCollection.collection || {});
           setOpenedPacks(Number(userCollection.openedPacks) || 0);
@@ -94,6 +98,7 @@ export default function App() {
     setAuth(null);
     setCards([]);
     setExpansions([]);
+    setJoinedExpansionIds([]);
     setSelectedExpansionId("");
     setCollection({});
     setPulls([]);
@@ -138,9 +143,28 @@ export default function App() {
     setActiveView("packs");
   }
 
+  async function handleJoinExpansion(code) {
+    const result = await joinExpansion(auth.token, code);
+    const nextJoinedIds = result.joinedExpansionIds || result.user?.joinedExpansionIds || [];
+    setJoinedExpansionIds(nextJoinedIds);
+    if (result.user) {
+      const nextAuth = { ...auth, user: result.user };
+      saveAuth(nextAuth);
+      setAuth(nextAuth);
+    }
+    if (result.expansion?.id) {
+      setSelectedExpansionId(result.expansion.id);
+    }
+    return result;
+  }
+
   if (!auth?.token) {
     return <AuthView onAuthenticated={handleAuthenticated} />;
   }
+
+  const visibleExpansions = expansions.filter((expansion) => joinedExpansionIds.includes(expansion.id));
+  const visibleExpansionIds = new Set(visibleExpansions.map((expansion) => expansion.id));
+  const visibleCards = cards.filter((card) => visibleExpansionIds.has(card.expansionId));
 
   return (
     <div className="app-shell">
@@ -149,8 +173,8 @@ export default function App() {
         {error ? <div className="form-error" role="alert">{error}</div> : null}
         {activeView === "packs" ? (
           <PackOpening
-            cards={cards.filter((card) => card.expansionId === selectedExpansionId)}
-            expansions={expansions}
+            cards={visibleCards.filter((card) => card.expansionId === selectedExpansionId)}
+            expansions={visibleExpansions}
             selectedExpansionId={selectedExpansionId}
             onExpansionChange={setSelectedExpansionId}
             user={auth.user}
@@ -162,10 +186,11 @@ export default function App() {
             onOpenPack={handleOpenPack}
             onDismissReveal={() => setPulls([])}
             onLogout={handleLogout}
+            onJoinExpansion={handleJoinExpansion}
           />
         ) : null}
-        {activeView === "collection" ? <CollectionView cards={cards} collection={collection} expansions={expansions} /> : null}
-        {activeView === "creator" ? <CardCreator user={auth.user} expansions={expansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
+        {activeView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} /> : null}
+        {activeView === "creator" ? <CardCreator user={auth.user} expansions={visibleExpansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
       </main>
     </div>
   );

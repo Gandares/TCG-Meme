@@ -122,8 +122,12 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
         </div>
       </div>
 
+      {!expansions.length ? (
+        <div className="empty-state">Introduce un codigo de union desde tu usuario para crear cartas en una expansion.</div>
+      ) : null}
+
       <div className="creator-layout">
-        <form className="editor-form" onSubmit={handleSubmit}>
+        <form className="editor-form" onSubmit={handleSubmit} aria-disabled={!expansions.length}>
           <label>
             Nombre *
             <input type="text" maxLength="28" placeholder="Nombre de la carta" required value={form.name} onChange={(event) => updateField("name", event.target.value)} />
@@ -163,7 +167,7 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
           </label>
           {error ? <div className="form-error" role="alert">{error}</div> : null}
           <div className="form-actions">
-            <button className="primary-button" type="submit" disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar carta"}</button>
+            <button className="primary-button" type="submit" disabled={isSaving || !expansions.length}>{isSaving ? "Guardando..." : "Guardar carta"}</button>
           </div>
         </form>
 

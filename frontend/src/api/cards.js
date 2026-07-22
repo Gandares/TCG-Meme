@@ -52,6 +52,23 @@ export async function fetchExpansions() {
   return response.json();
 }
 
+export async function joinExpansion(token, code) {
+  const response = await fetch(`${API_BASE}/api/expansions/join`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(token),
+    },
+    body: JSON.stringify({ code }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "No se pudo unir la expansion.");
+  }
+
+  return response.json();
+}
+
 export async function login(username, password) {
   return postAuth("/api/auth/login", username, password);
 }
