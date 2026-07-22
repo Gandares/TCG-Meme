@@ -130,7 +130,11 @@ export function PackOpening({
     try {
       const result = await onJoinExpansion?.(code);
       setJoinCode("");
-      setJoinMessage(result?.expansion?.name ? `Te uniste a ${result.expansion.name}.` : "Expansion anadida.");
+      if (result?.alreadyJoined && result?.expansion?.name) {
+        setJoinMessage(`Ya perteneces a ${result.expansion.name}.`);
+      } else {
+        setJoinMessage(result?.expansion?.name ? `Te uniste a ${result.expansion.name}.` : "Expansion anadida.");
+      }
     } catch (error) {
       setJoinError(error.message || "No se pudo unir la expansion.");
     } finally {

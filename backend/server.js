@@ -768,6 +768,8 @@ function joinExpansionByCode(username, rawCode) {
     throw new Error("Codigo de union no encontrado.");
   }
 
+  const currentUser = normalizeUserCollectionEntities(readUsers().find((user) => user.username === username) || {});
+  const alreadyJoined = userHasExpansion(currentUser, expansion.id);
   const updatedUser = updateUser(username, (user) => ({
     ...user,
     joinedExpansionIds: [...new Set([...(user.joinedExpansionIds || []), expansion.id])],
@@ -776,6 +778,7 @@ function joinExpansionByCode(username, rawCode) {
   return {
     expansion: publicExpansion(expansion),
     joinedExpansionIds: updatedUser.joinedExpansionIds || [],
+    alreadyJoined,
     user: publicUser(updatedUser),
   };
 }
