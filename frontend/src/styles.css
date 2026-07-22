@@ -2190,10 +2190,16 @@ button {
   .modal-backdrop {
     align-items: stretch;
     padding: 0;
+    overflow: hidden;
   }
 
   .card-detail {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 0.8rem;
     width: 100%;
+    min-height: 100dvh;
     max-height: 100dvh;
     border-width: 0;
     border-radius: 0;
@@ -2201,26 +2207,67 @@ button {
   }
 
   .detail-close {
-    position: sticky;
-    top: 0;
-    justify-self: end;
-    margin-bottom: -2.25rem;
+    position: fixed;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 4;
+  }
+
+  .detail-art {
+    width: min(100%, 16rem);
+    min-height: auto;
+    max-height: 42dvh;
+    aspect-ratio: 2.5 / 3.5;
+    justify-self: center;
+    margin-top: 2.4rem;
   }
 
   .detail-content {
+    min-width: 0;
     padding: 0;
+    gap: 0.7rem;
   }
 
   .detail-heading {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.65rem;
+    align-items: start;
   }
 
   .detail-heading h2 {
-    font-size: 2rem;
+    font-size: clamp(1.55rem, 8vw, 2rem);
+    overflow-wrap: anywhere;
+  }
+
+  .detail-heading p {
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+  }
+
+  .detail-heading strong {
+    padding: 0.35rem 0.55rem;
+  }
+
+  .detail-variant-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .detail-list {
+    gap: 0.55rem;
   }
 
   .detail-list div {
-    padding: 0.75rem;
+    padding: 0.65rem;
+  }
+
+  .detail-list dt {
+    font-size: 0.68rem;
+  }
+
+  .detail-list dd {
+    font-size: 0.92rem;
   }
 }
 
@@ -2247,5 +2294,10 @@ button {
 
   .pack-art {
     width: min(9rem, 50vw);
+  }
+
+  .detail-art {
+    width: min(100%, 13rem);
+    max-height: 38dvh;
   }
 }

@@ -203,12 +203,11 @@ export function PackOpening({
       </section>
 
       {isRevealVisible ? (
-        <div className={`pack-reveal-overlay ${allCardsRevealed ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onMouseDown={dismissReveal}>
+        <div className={`pack-reveal-overlay ${allCardsRevealed ? "ready-to-close" : ""}`} role="dialog" aria-modal="true" aria-label="Cartas abiertas" onClick={dismissReveal}>
           <button
             className="skip-reveal-button"
             type="button"
             disabled={allCardsRevealed}
-            onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
               revealAllCards();
@@ -216,7 +215,15 @@ export function PackOpening({
           >
             Saltar
           </button>
-          <div className="pack-reveal-grid" aria-live="polite" onMouseDown={(event) => event.stopPropagation()}>
+          <div
+            className="pack-reveal-grid"
+            aria-live="polite"
+            onClick={(event) => {
+              if (!allCardsRevealed) {
+                event.stopPropagation();
+              }
+            }}
+          >
             {pulls.map((card, index) => {
               const displayCard = withCardVariant(card, card.variant || "normal");
               const isRevealed = revealedCards.has(index);
