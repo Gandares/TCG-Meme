@@ -117,7 +117,9 @@ const server = http.createServer(async (request, response) => {
       const user = requireUser(request);
       const refreshedUser = refreshUserCurrency(user.username);
       sendJson(response, {
+        collectionId: refreshedUser.collectionId,
         collection: refreshedUser.collection || {},
+        collectionItems: refreshedUser.collectionItems || [],
         openedPacks: Number(refreshedUser.openedPacks) || 0,
         recentPulls: resolveRecentPulls(refreshedUser.recentPulls || []),
         currency: publicCurrency(refreshedUser),
@@ -173,6 +175,8 @@ function ensureStorage() {
   migrateCardsToDefaultExpansion();
   migrateCardIdsToExpansionNameFormat();
   migrateAlternativeImages();
+  migrateCardsToUniqueIds();
+  migrateUsersToUniqueCollections();
 }
 
 function readCards() {
@@ -290,6 +294,46 @@ function migrateAlternativeImages() {
   }
 }
 
+function migrateCardsToUniqueIds() {
+  const usedUids = new Set();
+  let changed = false;
+  const cards = readCardsFromFile(cardsFile).map((card) => {
+    const uid = ensureUniqueEntityId(card.uid, "card", usedUids);
+    if (uid !== card.uid) {
+      changed = true;
+    }
+
+    return { ...card, uid };
+  });
+
+  if (changed) {
+    writeCards(cards);
+  }
+}
+
+function migrateUsersToUniqueCollections() {
+  const users = readUsers();
+  const usedCollectionIds = new Set();
+  const usedCollectionItemIds = new Set();
+  let changed = false;
+  const migratedUsers = users.map((user) => {
+    const migratedUser = normalizeUserCollectionEntities(user, usedCollectionIds, usedCollectionItemIds);
+    if (
+      migratedUser.collectionId !== user.collectionId ||
+      JSON.stringify(migratedUser.collection || {}) !== JSON.stringify(user.collection || {}) ||
+      JSON.stringify(migratedUser.collectionItems || []) !== JSON.stringify(user.collectionItems || [])
+    ) {
+      changed = true;
+    }
+
+    return migratedUser;
+  });
+
+  if (changed) {
+    writeUsers(migratedUsers);
+  }
+}
+
 function migrateUserCardReferences(idMap) {
   const users = readUsers();
   let changed = false;
@@ -318,8 +362,83 @@ function migrateUserCardReferences(idMap) {
   });
 
   if (changed) {
-    writeUsers(migratedUsers);
+    writeUsers(migratedUsers.map((user) => normalizeUserCollectionEntities(user)));
   }
+}
+
+function normalizeUserCollectionEntities(user, usedCollectionIds = new Set(), usedCollectionItemIds = new Set()) {
+  const baseCollection = Object.keys(user.collection || {}).length ? user.collection : collectionItemsToMap(user.collectionItems || []);
+  const collection = normalizeCollectionMap(baseCollection);
+  return {
+    ...user,
+    collectionId: ensureUniqueEntityId(user.collectionId, "collection", usedCollectionIds),
+    collection,
+    collectionItems: createCollectionItems(collection, user.collectionItems || [], usedCollectionItemIds),
+  };
+}
+
+function normalizeCollectionMap(collection) {
+  return Object.entries(collection || {}).reduce((normalizedCollection, [key, value]) => {
+    const count = Math.max(0, Math.floor(Number(value) || 0));
+    if (count > 0) {
+      const { cardId, variant } = parseCollectionKey(key);
+      normalizedCollection[collectionKey(cardId, variant)] = count;
+    }
+    return normalizedCollection;
+  }, {});
+}
+
+function collectionItemsToMap(collectionItems) {
+  return (collectionItems || []).reduce((collection, item) => {
+    const cardId = cleanText(item?.cardId, 140);
+    const variant = normalizeVariant(item?.variant);
+    const count = Math.max(0, Math.floor(Number(item?.count) || 0));
+    if (cardId && count > 0) {
+      collection[collectionKey(cardId, variant)] = (Number(collection[collectionKey(cardId, variant)]) || 0) + count;
+    }
+    return collection;
+  }, {});
+}
+
+function createCollectionItems(collection, existingItems = [], usedItemIds = new Set()) {
+  const existingItemsByKey = new Map(
+    (existingItems || []).map((item) => [collectionKey(item?.cardId, item?.variant), item]),
+  );
+
+  return Object.entries(normalizeCollectionMap(collection)).map(([key, count]) => {
+    const { cardId, variant } = parseCollectionKey(key);
+    const existingItem = existingItemsByKey.get(key) || {};
+    return {
+      id: ensureUniqueEntityId(existingItem.id, "collection-item", usedItemIds),
+      cardId,
+      variant,
+      count,
+    };
+  });
+}
+
+function ensureUniqueEntityId(value, prefix, usedIds = new Set()) {
+  const id = cleanEntityId(value);
+  if (id && !usedIds.has(id)) {
+    usedIds.add(id);
+    return id;
+  }
+
+  const nextId = createUniqueEntityId(prefix);
+  usedIds.add(nextId);
+  return nextId;
+}
+
+function createUniqueEntityId(prefix) {
+  const safePrefix = cleanSlug(prefix) || "entity";
+  return `${safePrefix}_${crypto.randomUUID()}`;
+}
+
+function cleanEntityId(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .slice(0, 80);
 }
 
 function readUsers() {
@@ -359,7 +478,9 @@ function registerUser(payload) {
     username,
     salt,
     passwordHash: hashPassword(password, salt),
+    collectionId: createUniqueEntityId("collection"),
     collection: {},
+    collectionItems: [],
     openedPacks: 0,
     recentPulls: [],
     currency: 0,
@@ -388,11 +509,14 @@ function createAuthResponse(user) {
 }
 
 function publicUser(user) {
+  const normalizedUser = normalizeUserCollectionEntities(user);
   return {
-    username: user.username,
-    collection: user.collection || {},
-    openedPacks: Number(user.openedPacks) || 0,
-    currency: publicCurrency(user),
+    username: normalizedUser.username,
+    collectionId: normalizedUser.collectionId,
+    collection: normalizedUser.collection,
+    collectionItems: normalizedUser.collectionItems,
+    openedPacks: Number(normalizedUser.openedPacks) || 0,
+    currency: publicCurrency(normalizedUser),
   };
 }
 
@@ -443,7 +567,7 @@ function updateUser(username, updater) {
   if (index === -1) {
     throw new Error("Usuario no encontrado.");
   }
-  users[index] = updater(users[index]);
+  users[index] = normalizeUserCollectionEntities(updater(normalizeUserCollectionEntities(users[index])));
   writeUsers(users);
   return users[index];
 }
@@ -476,6 +600,7 @@ function openPackForUser(username, expansionId = defaultExpansion.id) {
       const key = collectionKey(card.id, card.variant);
       collection[key] = (Number(collection[key]) || 0) + 1;
     }
+    const collectionItems = createCollectionItems(collection, user.collectionItems || []);
     const recentPulls = [
       ...pulls.map((card) => ({ id: card.id, variant: card.variant || "normal" })),
       ...(user.recentPulls || []),
@@ -483,6 +608,7 @@ function openPackForUser(username, expansionId = defaultExpansion.id) {
     return {
       ...user,
       collection,
+      collectionItems,
       openedPacks: (Number(user.openedPacks) || 0) + 1,
       recentPulls,
       currency: currencyState.currency - packCost,
@@ -492,7 +618,9 @@ function openPackForUser(username, expansionId = defaultExpansion.id) {
 
   return {
     pulls,
+    collectionId: updatedUser.collectionId,
     collection: updatedUser.collection || {},
+    collectionItems: updatedUser.collectionItems || [],
     openedPacks: Number(updatedUser.openedPacks) || 0,
     recentPulls: resolveRecentPulls(updatedUser.recentPulls || []),
     currency: publicCurrency(updatedUser),
@@ -735,6 +863,7 @@ function createCard(payload, user) {
 
   return {
     id,
+    uid: createUniqueEntityId("card"),
     name,
     type: "",
     rarity: normalizeRarity(payload.rarity),
@@ -847,6 +976,11 @@ function isPathInside(filePath, baseDir) {
 function normalizeRarity(rarity) {
   const allowed = ["Comun", "Rara", "Epica", "Legendaria"];
   return allowed.includes(rarity) ? rarity : "Comun";
+}
+
+function normalizeVariant(variant) {
+  const allowed = ["normal", "holo", "alternative"];
+  return allowed.includes(variant) ? variant : "normal";
 }
 
 function cleanText(value, maxLength) {
