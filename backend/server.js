@@ -226,16 +226,12 @@ function createDefaultExpansion() {
   return {
     ...defaultExpansion,
     id: createUniqueEntityId("expansion"),
-    legacyId: defaultExpansion.id,
   };
 }
 
 function normalizeExpansion(expansion) {
   return {
-    ...defaultExpansion,
-    ...expansion,
     id: cleanEntityId(expansion?.id) || defaultExpansion.id,
-    legacyId: cleanSlug(expansion?.legacyId) || undefined,
     name: cleanText(expansion?.name, 40) || defaultExpansion.name,
     packImage: cleanText(expansion?.packImage, 160) || defaultExpansion.packImage,
     cardBackImage: cleanText(expansion?.cardBackImage, 160) || defaultExpansion.cardBackImage,
@@ -283,19 +279,9 @@ function migrateExpansionsToUniqueIds() {
       expansionIdMap.set(currentId, nextId);
     }
 
-    const previousLegacyId = cleanSlug(expansion.legacyId);
-    const legacyId = previousLegacyId || (nextId !== currentId ? cleanSlug(currentId) : "");
-    if (legacyId && legacyId !== nextId) {
-      expansionIdMap.set(legacyId, nextId);
-    }
-    if (legacyId !== (expansion.legacyId || "")) {
-      changed = true;
-    }
-
     return {
       ...expansion,
       id: nextId,
-      ...(legacyId ? { legacyId } : {}),
     };
   });
 

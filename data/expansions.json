@@ -3,7 +3,6 @@
     "id": "expansion_90f3f8cd-94ae-48e7-a7fa-9d2c0e92a5fe",
     "name": "Mágicas psiquiátricas",
     "packImage": "assets/pack-tavern.png",
-    "cardBackImage": "assets/card-back-fantasy.png",
-    "legacyId": "prueba"
+    "cardBackImage": "assets/card-back-fantasy.png"
   }
 ]
