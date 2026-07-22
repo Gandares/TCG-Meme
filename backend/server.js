@@ -11,7 +11,6 @@ const assetsDir = path.join(projectRoot, "assets");
 const uploadsDir = resolveStoragePath(process.env.UPLOADS_DIR, path.join(assetsDir, "uploads"));
 const cardsFile = path.join(dataDir, "card.json");
 const expansionsFile = path.join(dataDir, "expansions.json");
-const legacyCardsFile = path.join(dataDir, "cards.json");
 const usersFile = path.join(dataDir, "users.json");
 const tokenSecret = "tcg-meme-local-dev-secret";
 const currencyMax = 500;
@@ -177,8 +176,7 @@ function ensureStorage() {
   fs.mkdirSync(dataDir, { recursive: true });
   fs.mkdirSync(uploadsDir, { recursive: true });
   if (!fs.existsSync(cardsFile)) {
-    const legacyCards = fs.existsSync(legacyCardsFile) ? readCardsFromFile(legacyCardsFile) : [];
-    fs.writeFileSync(cardsFile, `${JSON.stringify(legacyCards, null, 2)}\n`, "utf8");
+    fs.writeFileSync(cardsFile, "[]\n", "utf8");
   }
   if (!fs.existsSync(expansionsFile)) {
     writeExpansions([createDefaultExpansion()]);
@@ -186,12 +184,6 @@ function ensureStorage() {
   if (!fs.existsSync(usersFile)) {
     fs.writeFileSync(usersFile, "[]\n", "utf8");
   }
-  migrateCardsToDefaultExpansion();
-  migrateExpansionsToUniqueIds();
-  migrateExpansionJoinCodes();
-  migrateAlternativeImages();
-  migrateCardIdsToUniqueExpansionFormat();
-  migrateUsersToUniqueCollections();
 }
 
 function readCards() {
@@ -280,197 +272,6 @@ function attachExpansions(cards) {
   }));
 }
 
-function migrateCardsToDefaultExpansion() {
-  const cards = readCardsFromFile(cardsFile);
-  const needsMigration = cards.some((card) => !card.expansionId);
-  if (needsMigration) {
-    writeCards(cards.map(normalizeCardExpansion));
-  }
-}
-
-function migrateExpansionsToUniqueIds() {
-  const expansions = readExpansions();
-  const usedIds = new Set();
-  const expansionIdMap = new Map();
-  let changed = false;
-  const migratedExpansions = expansions.map((expansion) => {
-    const currentId = cleanEntityId(expansion.id);
-    let nextId = currentId;
-    if (!isGeneratedEntityId(currentId, "expansion") || usedIds.has(currentId)) {
-      nextId = createUniqueEntityId("expansion");
-      changed = true;
-    }
-    usedIds.add(nextId);
-
-    if (nextId !== currentId) {
-      expansionIdMap.set(currentId, nextId);
-    }
-
-    return {
-      ...expansion,
-      id: nextId,
-    };
-  });
-
-  if (!changed && !expansionIdMap.size) {
-    return;
-  }
-
-  writeExpansions(migratedExpansions);
-  migrateCardExpansionReferences(expansionIdMap);
-}
-
-function migrateCardExpansionReferences(expansionIdMap) {
-  if (!expansionIdMap.size) {
-    return;
-  }
-
-  const cards = readCardsFromFile(cardsFile);
-  let changed = false;
-  const migratedCards = cards.map((card) => {
-    const nextExpansionId = expansionIdMap.get(card.expansionId) || card.expansionId;
-    if (nextExpansionId !== card.expansionId) {
-      changed = true;
-      return { ...card, expansionId: nextExpansionId };
-    }
-
-    return card;
-  });
-
-  if (changed) {
-    writeCards(migratedCards);
-  }
-}
-
-function migrateExpansionJoinCodes() {
-  const usedCodes = new Set();
-  let changed = false;
-  const expansions = readExpansions().map((expansion) => {
-    let joinCode = cleanJoinCode(expansion.joinCode);
-    if (!joinCode || usedCodes.has(joinCode)) {
-      joinCode = createUniqueJoinCode(usedCodes);
-      changed = true;
-    }
-    usedCodes.add(joinCode);
-    if (joinCode !== expansion.joinCode) {
-      changed = true;
-    }
-    return { ...expansion, joinCode };
-  });
-
-  if (changed) {
-    writeExpansions(expansions);
-  }
-}
-
-function migrateCardIdsToUniqueExpansionFormat() {
-  const expansionsById = new Map(readExpansions().map((expansion) => [expansion.id, expansion]));
-  const usedUids = new Set();
-  const usedIds = new Set();
-  const idMap = new Map();
-  const cards = readCardsFromFile(cardsFile).map(normalizeCardExpansion);
-  const migratedCards = cards.map((card) => {
-    const expansion = expansionsById.get(card.expansionId) || defaultExpansion;
-    let uid = cleanEntityId(card.uid) || extractCardUidFromId(card.id, expansion.id) || createUniqueEntityId("card");
-    if (usedUids.has(uid)) {
-      uid = createUniqueEntityId("card");
-    }
-    usedUids.add(uid);
-
-    let expectedId = createCardId(expansion, uid);
-    while (usedIds.has(expectedId)) {
-      uid = createUniqueEntityId("card");
-      expectedId = createCardId(expansion, uid);
-    }
-    usedIds.add(expectedId);
-
-    if (card.id === expectedId) {
-      return { ...card, uid };
-    }
-
-    idMap.set(card.id, expectedId);
-    return { ...card, id: expectedId, uid };
-  });
-
-  const changed = idMap.size || migratedCards.some((card, index) => card.uid !== cards[index].uid);
-  if (!changed) {
-    return;
-  }
-
-  writeCards(migratedCards);
-  if (idMap.size) {
-    migrateUserCardReferences(idMap);
-  }
-}
-
-function migrateAlternativeImages() {
-  const cards = readCardsFromFile(cardsFile).map(normalizeCardExpansion);
-  const needsMigration = cards.some((card) => !card.alternativeImage);
-  if (needsMigration) {
-    writeCards(cards.map((card) => ({ ...card, alternativeImage: card.alternativeImage || card.image })));
-  }
-}
-
-function migrateUsersToUniqueCollections() {
-  const users = readUsers();
-  const usedCollectionIds = new Set();
-  const usedCollectionItemIds = new Set();
-  const expansionIds = readExpansions().map((expansion) => expansion.id);
-  let changed = false;
-  const migratedUsers = users.map((user) => {
-    const userWithJoinedExpansions = Array.isArray(user.joinedExpansionIds)
-      ? user
-      : { ...user, joinedExpansionIds: expansionIds };
-    const migratedUser = normalizeUserCollectionEntities(userWithJoinedExpansions, usedCollectionIds, usedCollectionItemIds);
-    if (
-      migratedUser.collectionId !== user.collectionId ||
-      JSON.stringify(migratedUser.joinedExpansionIds || []) !== JSON.stringify(user.joinedExpansionIds || []) ||
-      JSON.stringify(migratedUser.collection || {}) !== JSON.stringify(user.collection || {}) ||
-      JSON.stringify(migratedUser.collectionItems || []) !== JSON.stringify(user.collectionItems || [])
-    ) {
-      changed = true;
-    }
-
-    return migratedUser;
-  });
-
-  if (changed) {
-    writeUsers(migratedUsers);
-  }
-}
-
-function migrateUserCardReferences(idMap) {
-  const users = readUsers();
-  let changed = false;
-  const migratedUsers = users.map((user) => {
-    const collection = {};
-    for (const [key, value] of Object.entries(user.collection || {})) {
-      const { cardId, variant } = parseCollectionKey(key);
-      const nextCardId = idMap.get(cardId) || cardId;
-      const nextKey = collectionKey(nextCardId, variant);
-      collection[nextKey] = (Number(collection[nextKey]) || 0) + (Number(value) || 0);
-      if (nextKey !== key) {
-        changed = true;
-      }
-    }
-
-    const recentPulls = (user.recentPulls || []).map((entry) => {
-      const cardId = typeof entry === "string" ? entry : entry?.id;
-      const nextCardId = idMap.get(cardId) || cardId;
-      if (nextCardId !== cardId) {
-        changed = true;
-      }
-      return typeof entry === "string" ? nextCardId : { ...entry, id: nextCardId };
-    });
-
-    return { ...user, collection, recentPulls };
-  });
-
-  if (changed) {
-    writeUsers(migratedUsers.map((user) => normalizeUserCollectionEntities(user)));
-  }
-}
-
 function normalizeUserCollectionEntities(user, usedCollectionIds = new Set(), usedCollectionItemIds = new Set()) {
   const baseCollection = Object.keys(user.collection || {}).length ? user.collection : collectionItemsToMap(user.collectionItems || []);
   const collection = normalizeCollectionMap(baseCollection);
@@ -541,10 +342,6 @@ function ensureUniqueEntityId(value, prefix, usedIds = new Set()) {
 function createUniqueEntityId(prefix) {
   const safePrefix = cleanSlug(prefix) || "entity";
   return `${safePrefix}_${crypto.randomUUID()}`;
-}
-
-function isGeneratedEntityId(value, prefix) {
-  return cleanEntityId(value).startsWith(`${cleanSlug(prefix)}_`);
 }
 
 function cleanEntityId(value) {
@@ -1155,17 +952,6 @@ function createCardId(expansion, cardUid) {
   const expansionId = cleanEntityId(expansion?.id);
   const normalizedCardUid = cleanEntityId(cardUid);
   return expansionId && normalizedCardUid ? `${expansionId}-${normalizedCardUid}` : "";
-}
-
-function extractCardUidFromId(cardId, expansionId) {
-  const prefix = `${cleanEntityId(expansionId)}-`;
-  const id = String(cardId || "");
-  if (!id.startsWith(prefix)) {
-    return "";
-  }
-
-  const uid = cleanEntityId(id.slice(prefix.length));
-  return uid.startsWith("card_") ? uid : "";
 }
 
 function cleanJoinCode(value) {
