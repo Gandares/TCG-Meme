@@ -1821,6 +1821,10 @@ button {
     align-items: center;
   }
 
+  .header-user-panel {
+    display: grid;
+  }
+
   .tabs {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1903,21 +1907,69 @@ button {
     align-content: center;
   }
 
+  .sidebar {
+    gap: 0.65rem;
+    padding: 0.65rem;
+  }
+
+  .brand {
+    gap: 0.65rem;
+  }
+
+  .brand-mark {
+    flex-basis: 2.35rem;
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .brand h1 {
+    font-size: 1.05rem;
+  }
+
   .main-content {
-    padding: 0.9rem;
+    padding: 0.75rem;
   }
 
   .view-header {
     display: grid;
+    gap: 0.8rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .view-header > div {
+    min-width: 0;
   }
 
   .header-user-panel {
     width: 100%;
     justify-self: stretch;
+    gap: 0.5rem;
+    padding: 0.65rem;
+  }
+
+  .header-user-panel > div {
+    gap: 0.5rem;
+  }
+
+  .header-user-panel strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.1;
+  }
+
+  .header-user-panel .ghost-button {
+    min-height: 2.35rem;
   }
 
   .view-header h2 {
-    font-size: 2rem;
+    font-size: clamp(1.75rem, 9vw, 2.25rem);
+    line-height: 0.98;
+  }
+
+  .view-header p {
+    font-size: 0.96rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .tabs,
@@ -1931,9 +1983,11 @@ button {
 
   .tab-button {
     justify-content: center;
-    min-height: 2.5rem;
-    padding: 0 0.45rem;
-    font-size: 0.82rem;
+    min-height: 2.25rem;
+    min-width: 0;
+    padding: 0 0.25rem;
+    font-size: 0.76rem;
+    white-space: nowrap;
   }
 
   .tab-button span {
@@ -1942,23 +1996,31 @@ button {
 
   .stats-panel {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.45rem;
+    gap: 0.4rem;
   }
 
   .stats-panel div {
     min-width: 0;
-    padding: 0.55rem;
+    padding: 0.5rem;
+  }
+
+  .stats-panel span {
+    font-size: 1.1rem;
   }
 
   .stats-panel small {
     display: block;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .card-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+    align-items: start;
   }
 
   .tcg-card {
@@ -1967,16 +2029,60 @@ button {
     margin-inline: auto;
   }
 
+  .card-grid .tcg-card {
+    min-height: auto;
+    max-width: none;
+    padding: 0.45rem;
+  }
+
+  .card-grid .card-topline {
+    min-height: 1.55rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.72rem;
+  }
+
+  .card-grid .card-body {
+    gap: 0.25rem;
+    padding: 0.45rem;
+    font-size: 0.64rem;
+  }
+
+  .card-grid .card-footer {
+    min-height: 1.55rem;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.62rem;
+  }
+
   .pack-stage {
-    padding: 1rem;
+    gap: 0.85rem;
+    padding: 0.85rem;
+  }
+
+  .pack-display {
+    grid-template-columns: 2.25rem minmax(8rem, 10rem) 2.25rem;
+    gap: 0.55rem;
+  }
+
+  .pack-arrow {
+    width: 2.25rem;
+    font-size: 1.45rem;
   }
 
   .pack-art {
-    width: min(14rem, 82vw);
+    width: min(10rem, 54vw);
   }
 
   .pack-copy h3 {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
+  }
+
+  .pack-expansion-name {
+    font-size: 0.78rem;
+  }
+
+  .pack-copy p {
+    max-width: 18rem;
+    font-size: 0.9rem;
   }
 
   .recent-pulls-track {
@@ -2025,10 +2131,14 @@ button {
   .filters {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
   }
 
   .filter-button {
-    padding: 0 0.55rem;
+    min-height: 2.35rem;
+    padding: 0 0.45rem;
+    font-size: 0.82rem;
+    line-height: 1.15;
   }
 
   .search-input {
@@ -2037,11 +2147,44 @@ button {
 
   .editor-form,
   .preview-panel {
-    padding: 0.85rem;
+    padding: 0.8rem;
+  }
+
+  .editor-form {
+    gap: 0.75rem;
+  }
+
+  .editor-form input,
+  .editor-form textarea,
+  .select-button {
+    font-size: 0.92rem;
+  }
+
+  .editor-form input[type="file"] {
+    min-height: 3.15rem;
+    padding: 0.45rem;
+    color: transparent;
+    font-size: 0.78rem;
+  }
+
+  .editor-form input[type="file"]::file-selector-button {
+    min-height: 2rem;
+    max-width: 100%;
+    margin-right: 0.45rem;
+    padding: 0 0.55rem;
+    color: var(--text);
+    font-size: 0.82rem;
+    white-space: normal;
+  }
+
+  .variant-toggle {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #previewCard {
-    max-width: none;
+    max-width: 14rem;
+    margin-inline: auto;
   }
 
   .modal-backdrop {
@@ -2087,10 +2230,22 @@ button {
   }
 
   .stats-panel {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .tab-button {
-    font-size: 0.76rem;
+    font-size: 0.7rem;
+  }
+
+  .card-grid {
+    gap: 0.55rem;
+  }
+
+  .card-grid .card-body {
+    display: none;
+  }
+
+  .pack-art {
+    width: min(9rem, 50vw);
   }
 }
