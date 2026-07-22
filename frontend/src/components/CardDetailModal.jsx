@@ -5,6 +5,7 @@ import { cardVariants, effectiveRarity, getCollectionCount, initials, rarityClas
 export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
   const defaultVariant = cardVariants.includes(variant) ? variant : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
+  const [isPressingArt, setIsPressingArt] = useState(false);
   const availableVariants = useMemo(() => {
     if (!collection) {
       return [defaultVariant];
@@ -44,6 +45,23 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
     event.currentTarget.style.setProperty("--glare-y", "50%");
   }
 
+  function handlePointerDown(event) {
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setIsPressingArt(true);
+    handleTilt(event);
+  }
+
+  function handlePointerUp(event) {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setIsPressingArt(false);
+    resetTilt(event);
+  }
+
+  function handlePointerLeave(event) {
+    setIsPressingArt(false);
+    resetTilt(event);
+  }
+
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
@@ -57,8 +75,16 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
           x
         </button>
 
-        <div className={`detail-art tilt-card ${isHolographic ? "card-holo" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
-          {image ? <img src={image} alt={displayCard.name} /> : <span>{initials(displayCard.name)}</span>}
+        <div
+          className={`detail-art tilt-card ${isHolographic ? "card-holo" : ""} ${isPressingArt ? "is-pressing" : ""}`}
+          onContextMenu={(event) => event.preventDefault()}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handleTilt}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerLeave}
+          onPointerLeave={handlePointerLeave}
+        >
+          {image ? <img src={image} alt={displayCard.name} draggable="false" /> : <span>{initials(displayCard.name)}</span>}
           {isHolographic ? <div className="holo-layer" /> : null}
         </div>
 
