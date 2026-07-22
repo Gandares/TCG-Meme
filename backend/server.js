@@ -16,6 +16,12 @@ const tokenSecret = "tcg-meme-local-dev-secret";
 const currencyMax = 500;
 const currencyIntervalMs = 10_000;
 const packCost = 100;
+const sellValuesByRarity = {
+  Comun: 5,
+  Rara: 10,
+  Epica: 20,
+  Legendaria: 50,
+};
 const joinCodeLength = 6;
 const joinCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const defaultExpansion = {
@@ -140,6 +146,16 @@ const server = http.createServer(async (request, response) => {
       });
     } catch (error) {
       sendJson(response, { error: error.message }, 401);
+    }
+    return;
+  }
+
+  if (requestUrl.pathname === "/api/collection/sell-duplicates" && request.method === "POST") {
+    try {
+      const user = requireUser(request);
+      sendJson(response, sellDuplicateCards(user.username));
+    } catch (error) {
+      sendJson(response, { error: error.message || "No se pudieron vender las repetidas." }, 400);
     }
     return;
   }
@@ -493,6 +509,50 @@ function refreshUserCurrency(username) {
       currencyUpdatedAt: currencyState.updatedAt,
     };
   });
+}
+
+function sellDuplicateCards(username) {
+  const cardsById = new Map(readCards().map((card) => [card.id, card]));
+  let soldCount = 0;
+  let earned = 0;
+  const updatedUser = updateUser(username, (user) => {
+    const currencyState = applyCurrencyRegen(user);
+    const collection = {};
+    for (const [key, value] of Object.entries(user.collection || {})) {
+      const count = Math.max(0, Math.floor(Number(value) || 0));
+      if (!count) {
+        continue;
+      }
+
+      const { cardId, variant } = parseCollectionKey(key);
+      const card = cardsById.get(cardId);
+      const normalizedKey = collectionKey(cardId, variant);
+      const duplicates = Math.max(0, count - 1);
+      collection[normalizedKey] = 1;
+      if (card && duplicates > 0) {
+        const displayRarity = effectiveRarity(card.rarity, variant);
+        earned += duplicates * (sellValuesByRarity[displayRarity] || 0);
+        soldCount += duplicates;
+      }
+    }
+
+    return {
+      ...user,
+      collection,
+      collectionItems: createCollectionItems(collection, user.collectionItems || []),
+      currency: currencyState.currency + earned,
+      currencyUpdatedAt: currencyState.updatedAt,
+    };
+  });
+
+  return {
+    soldCount,
+    earned,
+    collectionId: updatedUser.collectionId,
+    collection: updatedUser.collection || {},
+    collectionItems: updatedUser.collectionItems || [],
+    currency: publicCurrency(updatedUser),
+  };
 }
 
 function openPackForUser(username, expansionId = defaultExpansion.id) {

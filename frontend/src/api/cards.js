@@ -105,6 +105,19 @@ export async function fetchCollection(token) {
   return response.json();
 }
 
+export async function sellDuplicateCards(token) {
+  const response = await fetch(`${API_BASE}/api/collection/sell-duplicates`, {
+    method: "POST",
+    headers: authHeaders(token),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "No se pudieron vender las repetidas.");
+  }
+
+  return response.json();
+}
+
 export async function openPack(token, expansionId) {
   const response = await fetch(`${API_BASE}/api/packs/open`, {
     method: "POST",

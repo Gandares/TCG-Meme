@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, joinExpansion, loadAuth, openPack, saveAuth } from "./api/cards";
+import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, joinExpansion, loadAuth, openPack, saveAuth, sellDuplicateCards } from "./api/cards";
 import { AuthView } from "./components/AuthView";
 import { CardCreator } from "./components/CardCreator";
 import { CollectionView } from "./components/CollectionView";
@@ -143,6 +143,13 @@ export default function App() {
     setActiveView("packs");
   }
 
+  async function handleSellDuplicates() {
+    const result = await sellDuplicateCards(auth.token);
+    setCollection(result.collection || {});
+    setCurrency(Number(result.currency) || 0);
+    return result;
+  }
+
   async function handleJoinExpansion(code) {
     const result = await joinExpansion(auth.token, code);
     const nextJoinedIds = result.joinedExpansionIds || result.user?.joinedExpansionIds || [];
@@ -191,7 +198,7 @@ export default function App() {
             onJoinExpansion={handleJoinExpansion}
           />
         ) : null}
-        {currentView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} /> : null}
+        {currentView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} onSellDuplicates={handleSellDuplicates} /> : null}
         {currentView === "creator" ? <CardCreator user={auth.user} expansions={visibleExpansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
       </main>
     </div>
