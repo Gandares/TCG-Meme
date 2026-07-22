@@ -1,9 +1,9 @@
-export function Sidebar({ activeView, stats, onViewChange }) {
+export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true }) {
   const tabs = [
     ["packs", "PK", "Sobres"],
     ["collection", "CL", "Coleccion"],
-    ["creator", "+", "Crear carta"],
-  ];
+    canCreateCards ? ["creator", "+", "Crear carta"] : null,
+  ].filter(Boolean);
 
   return (
     <aside className="sidebar">
