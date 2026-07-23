@@ -6,6 +6,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
   const defaultVariant = cardVariants.includes(variant) ? variant : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
   const [isPressingArt, setIsPressingArt] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const availableVariants = useMemo(() => {
     if (!collection) {
       return [defaultVariant];
@@ -24,6 +25,10 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
   useEffect(() => {
     setSelectedVariant(defaultVariant);
   }, [defaultVariant, card.id]);
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [image]);
 
   function handleTilt(event) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -65,7 +70,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
-        className={`card-detail ${rarityClass(effectiveRarity(card, displayVariant))} ${isHolographic ? "detail-holo" : ""} ${displayVariant === "alternative" ? "detail-alternative" : ""}`}
+        className={`card-detail ${rarityClass(effectiveRarity(card, displayVariant))} ${isHolographic ? "detail-holo" : ""} ${displayVariant === "alternative" ? "detail-alternative" : ""} ${availableVariants.length > 1 ? "has-variants" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="cardDetailTitle"
@@ -84,8 +89,18 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
           onPointerCancel={handlePointerLeave}
           onPointerLeave={handlePointerLeave}
         >
-          {image ? <img src={image} alt={displayCard.name} draggable="false" /> : <span>{initials(displayCard.name)}</span>}
-          {isHolographic ? <div className="holo-layer" /> : null}
+          {image ? (
+            <img
+              key={image}
+              src={image}
+              alt={displayCard.name}
+              draggable="false"
+              onLoad={() => setIsImageLoaded(true)}
+            />
+          ) : (
+            <span>{initials(displayCard.name)}</span>
+          )}
+          {isHolographic && (!image || isImageLoaded) ? <div className="holo-layer" /> : null}
         </div>
 
         <div className="detail-content">
