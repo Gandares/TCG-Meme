@@ -155,11 +155,11 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
           </label>
           <label>
             Descripción *
-            <textarea maxLength="130" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
+            <textarea maxLength="110" rows="4" placeholder="Texto o efecto de la carta" required value={form.description} onChange={(event) => updateField("description", event.target.value)} />
           </label>
           <label>
             Texto "flavour"
-            <textarea maxLength="120" rows="3" placeholder="Una frase narrativa o graciosa" value={form.flavor} onChange={(event) => updateField("flavor", event.target.value)} />
+            <textarea maxLength="90" rows="3" placeholder="Una frase narrativa o graciosa" value={form.flavor} onChange={(event) => updateField("flavor", event.target.value)} />
           </label>
           <label>
             Creada por *
