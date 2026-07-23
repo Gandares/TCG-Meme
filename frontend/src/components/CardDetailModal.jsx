@@ -79,55 +79,29 @@ function drawWrappedText(context, text, x, y, maxWidth, lineHeight, maxLines) {
 function drawHoloEffect(context, width, height) {
   context.save();
   context.globalCompositeOperation = "screen";
-  context.globalAlpha = 0.42;
+  context.globalAlpha = 0.3;
 
   const sweep = context.createLinearGradient(0, 0, width, height);
-  sweep.addColorStop(0, "rgba(255, 119, 115, 0.12)");
-  sweep.addColorStop(0.16, "rgba(255, 237, 95, 0.24)");
-  sweep.addColorStop(0.32, "rgba(168, 255, 95, 0.22)");
-  sweep.addColorStop(0.48, "rgba(131, 255, 247, 0.28)");
-  sweep.addColorStop(0.64, "rgba(120, 148, 255, 0.24)");
-  sweep.addColorStop(0.82, "rgba(216, 117, 255, 0.24)");
-  sweep.addColorStop(1, "rgba(255, 119, 115, 0.12)");
+  sweep.addColorStop(0, "rgba(255, 255, 255, 0)");
+  sweep.addColorStop(0.18, "rgba(102, 218, 255, 0.34)");
+  sweep.addColorStop(0.36, "rgba(255, 121, 219, 0.3)");
+  sweep.addColorStop(0.54, "rgba(255, 231, 112, 0.28)");
+  sweep.addColorStop(0.72, "rgba(118, 255, 184, 0.28)");
+  sweep.addColorStop(1, "rgba(255, 255, 255, 0)");
   context.fillStyle = sweep;
   context.fillRect(0, 0, width, height);
 
-  context.globalAlpha = 0.18;
-  const crossSweep = context.createLinearGradient(width, 0, 0, height);
-  crossSweep.addColorStop(0, "rgba(14, 21, 46, 0.1)");
-  crossSweep.addColorStop(0.24, "rgba(255, 255, 255, 0.2)");
-  crossSweep.addColorStop(0.5, "rgba(14, 21, 46, 0.04)");
-  crossSweep.addColorStop(0.76, "rgba(255, 255, 255, 0.18)");
-  crossSweep.addColorStop(1, "rgba(14, 21, 46, 0.1)");
-  context.fillStyle = crossSweep;
-  context.fillRect(0, 0, width, height);
-
-  context.globalAlpha = 0.22;
+  context.globalAlpha = 0.16;
   context.rotate(-0.52);
-  for (let index = -height; index < width * 1.5; index += 42) {
-    const band = context.createLinearGradient(index, 0, index + 150, 0);
+  for (let index = -height; index < width * 1.5; index += 46) {
+    const band = context.createLinearGradient(index, 0, index + 130, 0);
     band.addColorStop(0, "rgba(255, 255, 255, 0)");
-    band.addColorStop(0.42, "rgba(255, 255, 255, 0.36)");
-    band.addColorStop(0.5, "rgba(131, 255, 247, 0.32)");
-    band.addColorStop(0.58, "rgba(255, 237, 95, 0.28)");
+    band.addColorStop(0.5, "rgba(255, 255, 255, 0.5)");
     band.addColorStop(1, "rgba(255, 255, 255, 0)");
     context.fillStyle = band;
-    context.fillRect(index, -height, 20, height * 3);
+    context.fillRect(index, -height, 18, height * 3);
   }
 
-  context.restore();
-
-  context.save();
-  context.globalCompositeOperation = "screen";
-  context.globalAlpha = 0.11;
-  context.fillStyle = "rgba(255, 255, 255, 0.62)";
-  for (let y = 26; y < height; y += 86) {
-    for (let x = 18; x < width; x += 92) {
-      context.beginPath();
-      context.arc(x + ((y / 86) % 2) * 34, y, 1.8, 0, Math.PI * 2);
-      context.fill();
-    }
-  }
   context.restore();
 }
 
@@ -153,15 +127,15 @@ async function renderCardPng(card, variant) {
   context.fillRect(0, 0, width, height);
   drawCoverImage(context, image, 0, 0, width, height);
 
+  if (variant === "holo" || variant === "alternative") {
+    drawHoloEffect(context, width, height);
+  }
+
   const vignette = context.createRadialGradient(width / 2, height / 2, 140, width / 2, height / 2, 680);
   vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
   vignette.addColorStop(1, "rgba(0, 0, 0, 0.58)");
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
-
-  if (variant === "holo" || variant === "alternative") {
-    drawHoloEffect(context, width, height);
-  }
 
   if (variant !== "alternative") {
     context.fillStyle = "rgba(8, 10, 12, 0.56)";
