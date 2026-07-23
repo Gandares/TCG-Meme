@@ -410,7 +410,7 @@ function registerUser(payload) {
     collectionItems: [],
     openedPacks: 0,
     recentPulls: [],
-    currency: 0,
+    currency: 100,
     currencyUpdatedAt: Date.now(),
   };
   users.push(user);
