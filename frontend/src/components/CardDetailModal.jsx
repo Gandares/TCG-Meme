@@ -285,20 +285,6 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
             <strong>{card.expansion?.name || "Sin expansion"}</strong>
           </section>
 
-          <dl className="detail-list">
-            <div>
-              <dt>Descripción</dt>
-              <dd>{card.description || "Sin descripcion."}</dd>
-            </div>
-            <div>
-              <dt>Texto flavour</dt>
-              <dd>{card.flavor || "Sin flavour text."}</dd>
-            </div>
-            <div>
-              <dt>Creador</dt>
-              <dd>{card.author || "Creador anonimo"}</dd>
-            </div>
-          </dl>
         </div>
       </section>
     </div>
