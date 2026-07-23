@@ -2387,9 +2387,9 @@ button {
   }
 
   .detail-card-preview {
-    width: min(100%, 16rem);
+    width: min(100%, 18rem);
     min-height: auto;
-    max-height: 42dvh;
+    max-height: 52dvh;
     aspect-ratio: 2.5 / 3.5;
     justify-self: center;
     margin-top: 2.4rem;
@@ -2401,8 +2401,8 @@ button {
   }
 
   .card-detail.has-variants .detail-card-preview {
-    width: min(100%, 14.5rem);
-    max-height: 34dvh;
+    width: min(100%, 17rem);
+    max-height: 46dvh;
   }
 
   .detail-content {
@@ -2419,7 +2419,7 @@ button {
   }
 
   .detail-heading h2 {
-    font-size: clamp(1.55rem, 8vw, 2rem);
+    font-size: clamp(1.3rem, 7vw, 1.75rem);
     overflow-wrap: anywhere;
   }
 
@@ -2484,12 +2484,12 @@ button {
   }
 
   .detail-card-preview {
-    width: min(100%, 13rem);
-    max-height: 38dvh;
+    width: min(100%, 15.5rem);
+    max-height: 48dvh;
   }
 
   .card-detail.has-variants .detail-card-preview {
-    width: min(100%, 12rem);
-    max-height: 31dvh;
+    width: min(100%, 14.5rem);
+    max-height: 42dvh;
   }
 }
