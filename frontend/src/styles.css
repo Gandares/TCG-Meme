@@ -2275,6 +2275,8 @@ button {
   }
 
   .reveal-card .card-footer {
+    align-self: end;
+    margin-top: auto;
     font-size: 0.5rem;
   }
 
