@@ -1138,6 +1138,7 @@ button {
 .card-footer {
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .card-topline,
@@ -1150,6 +1151,7 @@ button {
 
 .card-topline strong {
   display: block;
+  min-width: 0;
   font-size: 1.12rem;
   line-height: 1.05;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
@@ -1174,6 +1176,7 @@ button {
   margin: 0;
   line-height: 1.38;
   overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .card-body p {
@@ -1199,6 +1202,11 @@ button {
   font-size: 0.82rem;
   font-weight: 900;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+.card-footer span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .modal-backdrop {
@@ -2135,9 +2143,10 @@ button {
   }
 
   .card-grid .tcg-card {
-    min-height: auto;
+    min-height: 14.4rem;
     max-width: none;
     padding: 0.45rem;
+    aspect-ratio: auto;
   }
 
   .card-grid .card-topline {
@@ -2146,16 +2155,44 @@ button {
     font-size: 0.72rem;
   }
 
+  .card-grid .card-topline strong {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
   .card-grid .card-body {
     gap: 0.25rem;
     padding: 0.45rem;
     font-size: 0.64rem;
   }
 
+  .card-grid .card-body p,
+  .card-grid .card-body em {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+  }
+
+  .card-grid .card-body p {
+    -webkit-line-clamp: 3;
+  }
+
+  .card-grid .card-body em {
+    -webkit-line-clamp: 2;
+  }
+
   .card-grid .card-footer {
     min-height: 1.55rem;
     padding: 0.35rem 0.45rem;
     font-size: 0.62rem;
+  }
+
+  .card-grid .card-footer span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .pack-stage {
