@@ -28,18 +28,22 @@ export function Card({ card, count, locked = false }) {
     event.currentTarget.style.setProperty("--glare-y", "50%");
   }
 
+  function preventCardMenu(event) {
+    event.preventDefault();
+  }
+
   if (locked) {
     return (
-      <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} aria-label="Carta no desbloqueada" onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+      <article className={`tcg-card card-locked tilt-card ${rarityClass(displayRarity)}`} aria-label="Carta no desbloqueada" onContextMenu={preventCardMenu} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
         <div className="card-back-pattern" style={cardBackImage ? { backgroundImage: `url("${cardBackImage}")` } : undefined} />
       </article>
     );
   }
 
   return (
-    <article className={`tcg-card tilt-card ${rarityClass(displayRarity)} ${isHolographic ? "card-holo" : ""} ${variant === "alternative" ? "card-alternative" : ""}`} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
+    <article className={`tcg-card tilt-card ${rarityClass(displayRarity)} ${isHolographic ? "card-holo" : ""} ${variant === "alternative" ? "card-alternative" : ""}`} onContextMenu={preventCardMenu} onPointerMove={handleTilt} onPointerLeave={resetTilt}>
       <div className="card-art">
-        {image ? <img src={image} alt={card.name} loading="lazy" /> : initials(card.name)}
+        {image ? <img src={image} alt={card.name} loading="lazy" draggable="false" /> : initials(card.name)}
       </div>
       {isHolographic ? <div className="holo-layer" /> : null}
       {variant === "alternative" ? null : (
