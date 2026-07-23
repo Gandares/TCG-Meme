@@ -157,7 +157,7 @@ export function CollectionView({ cards, collection, expansions = [], onSellDupli
                 disabled={isLocked}
                 onClick={() => setSelectedCard(card)}
               >
-                <Card card={withCardVariant(card, previewVariant)} count={ownedCount} locked={isLocked} />
+                <Card card={withCardVariant(card, previewVariant)} count={ownedCount} locked={isLocked} enableTilt={false} />
               </button>
             );
           })
