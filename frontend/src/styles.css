@@ -708,19 +708,19 @@ button {
 }
 
 .recent-pull-card .card-topline strong {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
 }
 
 .recent-pull-card .card-body {
   gap: 0.22rem;
   padding: 0.42rem;
-  font-size: 0.66rem;
+  font-size: 0.58rem;
 }
 
 .recent-pull-card .card-footer {
   min-height: 1.5rem;
   padding: 0.35rem 0.45rem;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
 }
 
 .pack-reveal-overlay {
@@ -1152,7 +1152,7 @@ button {
 .card-topline strong {
   display: block;
   min-width: 0;
-  font-size: 1.12rem;
+  font-size: 0.98rem;
   line-height: 1.05;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
   overflow-wrap: anywhere;
@@ -1163,6 +1163,7 @@ button {
   display: grid;
   gap: 0.45rem;
   padding: 0.7rem;
+  font-size: 0.86rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 7px;
   background: rgba(10, 12, 14, 0.32);
@@ -1186,7 +1187,7 @@ button {
 .card-body em {
   color: #d8cfbf;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
 }
 
 .card-body small {
@@ -1199,7 +1200,7 @@ button {
   padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.28);
   color: rgba(255, 255, 255, 0.82);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 900;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
 }
@@ -2152,7 +2153,7 @@ button {
   .card-grid .card-topline {
     min-height: 1.55rem;
     padding: 0.35rem 0.45rem;
-    font-size: 0.72rem;
+    font-size: 0.66rem;
   }
 
   .card-grid .card-topline strong {
@@ -2165,7 +2166,7 @@ button {
   .card-grid .card-body {
     gap: 0.25rem;
     padding: 0.45rem;
-    font-size: 0.64rem;
+    font-size: 0.56rem;
   }
 
   .card-grid .card-body p,
@@ -2186,7 +2187,7 @@ button {
   .card-grid .card-footer {
     min-height: 1.55rem;
     padding: 0.35rem 0.45rem;
-    font-size: 0.62rem;
+    font-size: 0.54rem;
   }
 
   .card-grid .card-footer span:first-child {
