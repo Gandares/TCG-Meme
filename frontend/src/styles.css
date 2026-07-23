@@ -1481,6 +1481,16 @@ button {
   font-weight: 800;
 }
 
+.selected-file-name {
+  display: block;
+  min-width: 0;
+  color: rgba(255, 247, 229, 0.72);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .search-input {
   max-width: 20rem;
 }
