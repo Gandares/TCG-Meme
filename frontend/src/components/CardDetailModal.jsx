@@ -11,41 +11,15 @@ function safeFileName(value) {
     .toLowerCase() || "carta";
 }
 
-const cardStyleMarkers = [
-  ".tcg-card",
-  ".card-art",
-  ".card-vignette",
-  ".holo-layer",
-  ".card-topline",
-  ".card-body",
-  ".card-footer",
-  ".card-holo",
-  ".card-alternative",
-];
-
-function isCardStyleRule(ruleText) {
-  return cardStyleMarkers.some((marker) => ruleText.includes(marker));
-}
-
-function serializeCardRule(rule) {
-  if ("cssRules" in rule) {
-    const nestedRules = Array.from(rule.cssRules).map(serializeCardRule).filter(Boolean).join("\n");
-    return nestedRules ? `${rule.conditionText ? `@media ${rule.conditionText}` : rule.name} {\n${nestedRules}\n}` : "";
-  }
-
-  return isCardStyleRule(rule.cssText) ? rule.cssText : "";
-}
-
-function readCardStyles() {
+function readDocumentStyles() {
   return Array.from(document.styleSheets)
     .map((styleSheet) => {
       try {
-        return Array.from(styleSheet.cssRules).map(serializeCardRule).filter(Boolean).join("\n");
+        return Array.from(styleSheet.cssRules).map((rule) => rule.cssText).join("\n");
       } catch {
         return "";
       }
     })
-    .filter(Boolean)
     .join("\n");
 }
 
@@ -82,26 +56,15 @@ async function inlineImages(root) {
 function svgTextToPngBlob(svgText, width, height, scale = 3) {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
-    let settled = false;
-    const timeoutId = window.setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        reject(new Error("No se pudo renderizar la carta descargable."));
-      }
-    }, 7000);
+    const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+    const svgUrl = URL.createObjectURL(svgBlob);
 
     image.addEventListener("load", () => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      window.clearTimeout(timeoutId);
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
       if (!context) {
+        URL.revokeObjectURL(svgUrl);
         reject(new Error("No se pudo preparar la descarga."));
         return;
       }
@@ -110,44 +73,17 @@ function svgTextToPngBlob(svgText, width, height, scale = 3) {
       canvas.height = Math.round(height * scale);
       context.scale(scale, scale);
       context.drawImage(image, 0, 0, width, height);
+      URL.revokeObjectURL(svgUrl);
       canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo crear el PNG."))), "image/png");
     }, { once: true });
 
     image.addEventListener("error", () => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      window.clearTimeout(timeoutId);
+      URL.revokeObjectURL(svgUrl);
       reject(new Error("No se pudo renderizar la carta descargable."));
     }, { once: true });
 
     image.src = svgUrl;
   });
-}
-
-function createCardSvgText(clone, css, width, height) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-  const wrapper = document.createElement("div");
-  const style = document.createElement("style");
-
-  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-  svg.setAttribute("width", String(width));
-  svg.setAttribute("height", String(height));
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  foreignObject.setAttribute("width", "100%");
-  foreignObject.setAttribute("height", "100%");
-  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-  wrapper.setAttribute("class", "download-card-root");
-  style.textContent = css;
-
-  wrapper.append(style, clone);
-  foreignObject.append(wrapper);
-  svg.append(foreignObject);
-
-  return new XMLSerializer().serializeToString(svg);
 }
 
 async function renderCardPng(cardNode) {
@@ -178,7 +114,7 @@ async function renderCardPng(cardNode) {
 
   await inlineImages(clone);
 
-  const css = `${readCardStyles()}
+  const css = `${readDocumentStyles()}
     .download-card-root {
       width: ${width}px;
       height: ${height}px;
@@ -200,7 +136,17 @@ async function renderCardPng(cardNode) {
       opacity: 0 !important;
     }
   `;
-  const svgText = createCardSvgText(clone, css, width, height);
+
+  const svgText = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="download-card-root">
+          <style>${css.replaceAll("</style", "<\\/style")}</style>
+          ${clone.outerHTML}
+        </div>
+      </foreignObject>
+    </svg>
+  `;
 
   return svgTextToPngBlob(svgText, width, height);
 }
