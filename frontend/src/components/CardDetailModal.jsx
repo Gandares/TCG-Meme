@@ -76,105 +76,55 @@ function drawWrappedText(context, text, x, y, maxWidth, lineHeight, maxLines) {
   return y;
 }
 
-function createCanvasLayer(width, height) {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
-  if (!context) {
-    throw new Error("No se pudo preparar el efecto holo.");
-  }
-
-  canvas.width = width;
-  canvas.height = height;
-  return { canvas, context };
-}
-
-function drawRainbowBands(context, width, height, cycleHeight) {
-  const colors = [
-    "rgb(255, 119, 115)",
-    "rgb(255, 237, 95)",
-    "rgb(168, 255, 95)",
-    "rgb(131, 255, 247)",
-    "rgb(120, 148, 255)",
-    "rgb(216, 117, 255)",
-    "rgb(255, 119, 115)",
-  ];
-
-  for (let y = -cycleHeight; y < height + cycleHeight; y += cycleHeight) {
-    const gradient = context.createLinearGradient(0, y, 0, y + cycleHeight);
-    colors.forEach((color, index) => {
-      gradient.addColorStop(index / (colors.length - 1), color);
-    });
-    context.fillStyle = gradient;
-    context.fillRect(0, y, width, cycleHeight);
-  }
-}
-
-function drawDiagonalHoloBands(context, width, height, spacing = 54) {
+function drawHoloEffect(context, width, height) {
   context.save();
-  context.translate(width / 2, height / 2);
-  context.rotate((133 * Math.PI) / 180);
-  context.translate(-width / 2, -height / 2);
+  context.globalCompositeOperation = "screen";
+  context.globalAlpha = 0.42;
 
-  for (let x = -height * 1.2; x < width + height * 1.2; x += spacing) {
-    context.fillStyle = "#0e152e";
-    context.fillRect(x, -height, spacing * 0.58, height * 3);
+  const sweep = context.createLinearGradient(0, 0, width, height);
+  sweep.addColorStop(0, "rgba(255, 119, 115, 0.12)");
+  sweep.addColorStop(0.16, "rgba(255, 237, 95, 0.24)");
+  sweep.addColorStop(0.32, "rgba(168, 255, 95, 0.22)");
+  sweep.addColorStop(0.48, "rgba(131, 255, 247, 0.28)");
+  sweep.addColorStop(0.64, "rgba(120, 148, 255, 0.24)");
+  sweep.addColorStop(0.82, "rgba(216, 117, 255, 0.24)");
+  sweep.addColorStop(1, "rgba(255, 119, 115, 0.12)");
+  context.fillStyle = sweep;
+  context.fillRect(0, 0, width, height);
 
-    const band = context.createLinearGradient(x + spacing * 0.58, 0, x + spacing * 0.78, 0);
+  context.globalAlpha = 0.18;
+  const crossSweep = context.createLinearGradient(width, 0, 0, height);
+  crossSweep.addColorStop(0, "rgba(14, 21, 46, 0.1)");
+  crossSweep.addColorStop(0.24, "rgba(255, 255, 255, 0.2)");
+  crossSweep.addColorStop(0.5, "rgba(14, 21, 46, 0.04)");
+  crossSweep.addColorStop(0.76, "rgba(255, 255, 255, 0.18)");
+  crossSweep.addColorStop(1, "rgba(14, 21, 46, 0.1)");
+  context.fillStyle = crossSweep;
+  context.fillRect(0, 0, width, height);
+
+  context.globalAlpha = 0.22;
+  context.rotate(-0.52);
+  for (let index = -height; index < width * 1.5; index += 42) {
+    const band = context.createLinearGradient(index, 0, index + 150, 0);
     band.addColorStop(0, "rgba(255, 255, 255, 0)");
-    band.addColorStop(0.38, "hsl(180, 10%, 58%)");
-    band.addColorStop(0.5, "hsl(180, 29%, 66%)");
-    band.addColorStop(0.62, "hsl(180, 10%, 58%)");
+    band.addColorStop(0.42, "rgba(255, 255, 255, 0.36)");
+    band.addColorStop(0.5, "rgba(131, 255, 247, 0.32)");
+    band.addColorStop(0.58, "rgba(255, 237, 95, 0.28)");
     band.addColorStop(1, "rgba(255, 255, 255, 0)");
     context.fillStyle = band;
-    context.fillRect(x + spacing * 0.58, -height, spacing * 0.2, height * 3);
+    context.fillRect(index, -height, 20, height * 3);
   }
 
-  context.restore();
-}
-
-function drawHoloEffect(context, width, height) {
-  const mainLayer = createCanvasLayer(width, height);
-  drawRainbowBands(mainLayer.context, width, height, height * 0.35);
-  mainLayer.context.globalCompositeOperation = "hue";
-  drawDiagonalHoloBands(mainLayer.context, width, height, 62);
-
-  const shade = mainLayer.context.createRadialGradient(width * 0.5, height * 0.5, width * 0.12, width * 0.5, height * 0.5, width * 0.82);
-  shade.addColorStop(0, "rgba(0, 0, 0, 0.05)");
-  shade.addColorStop(0.44, "rgba(0, 0, 0, 0.18)");
-  shade.addColorStop(1, "rgba(0, 0, 0, 0.34)");
-  mainLayer.context.globalCompositeOperation = "hard-light";
-  mainLayer.context.fillStyle = shade;
-  mainLayer.context.fillRect(0, 0, width, height);
-
-  context.save();
-  context.globalCompositeOperation = "color-dodge";
-  context.globalAlpha = 0.52;
-  context.filter = "brightness(0.62) contrast(1.85) saturate(0.55)";
-  context.drawImage(mainLayer.canvas, 0, 0);
-  context.restore();
-
-  const softLayer = createCanvasLayer(width, height);
-  drawRainbowBands(softLayer.context, width, height, height * 0.35);
-  softLayer.context.globalCompositeOperation = "hard-light";
-  drawDiagonalHoloBands(softLayer.context, width, height, 72);
-
-  context.save();
-  context.globalCompositeOperation = "soft-light";
-  context.globalAlpha = 0.32;
-  context.filter = "brightness(0.74) contrast(1.48) saturate(0.95)";
-  context.drawImage(softLayer.canvas, 0, 0);
   context.restore();
 
   context.save();
   context.globalCompositeOperation = "screen";
-  context.globalAlpha = 0.1;
-  for (let y = 24; y < height + 80; y += 80) {
-    for (let x = 18; x < width + 80; x += 80) {
-      const offsetX = x + ((Math.floor(y / 80) % 2) * 26);
-      context.fillStyle = "rgba(255, 255, 255, 0.34)";
+  context.globalAlpha = 0.11;
+  context.fillStyle = "rgba(255, 255, 255, 0.62)";
+  for (let y = 26; y < height; y += 86) {
+    for (let x = 18; x < width; x += 92) {
       context.beginPath();
-      context.arc(offsetX + width * 0.02, y + height * 0.025, 2.7, 0, Math.PI * 2);
+      context.arc(x + ((y / 86) % 2) * 34, y, 1.8, 0, Math.PI * 2);
       context.fill();
     }
   }
