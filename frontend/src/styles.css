@@ -1266,48 +1266,12 @@ button {
   font-weight: 900;
 }
 
-.detail-art {
-  --tilt-x: 0deg;
-  --tilt-y: 0deg;
-  --glare-x: 50%;
-  --glare-y: 50%;
+.detail-card-preview {
   position: relative;
   z-index: 0;
   display: grid;
   place-items: center;
   min-height: 30rem;
-  border-radius: 8px;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(88, 195, 155, 0.32), transparent),
-    linear-gradient(315deg, rgba(92, 168, 232, 0.28), transparent),
-    #121416;
-  color: rgba(255, 255, 255, 0.46);
-  font-size: 5rem;
-  font-weight: 900;
-  transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
-  transform-style: preserve-3d;
-  transition: transform 180ms ease, box-shadow 180ms ease;
-  touch-action: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  will-change: transform;
-}
-
-.detail-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at var(--glare-x) var(--glare-y), rgba(255, 255, 255, 0.28), transparent 22%),
-    linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.12), transparent 62%);
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-.detail-art.is-pressing::after {
-  opacity: 1;
 }
 
 @media (hover: hover) {
@@ -1334,13 +1298,9 @@ button {
   }
 }
 
-.detail-art img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  user-select: none;
-  -webkit-user-drag: none;
-  -webkit-touch-callout: none;
+.detail-card-preview .tcg-card {
+  width: min(100%, 24rem);
+  min-height: 30rem;
 }
 
 .detail-content {
@@ -1410,6 +1370,40 @@ button {
 
 .detail-variant-toggle {
   margin-bottom: 0;
+}
+
+.detail-download-button {
+  width: fit-content;
+}
+
+.detail-download-error {
+  margin: 0;
+  color: #ffb3a6;
+  font-weight: 800;
+}
+
+.detail-expansion-panel {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  border: 1px solid rgba(242, 201, 76, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(242, 201, 76, 0.14), transparent 70%),
+    rgba(255, 255, 255, 0.04);
+}
+
+.detail-expansion-panel span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.detail-expansion-panel strong {
+  color: #ffe6a3;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
 }
 
 .detail-list {
@@ -2013,7 +2007,7 @@ button {
     width: min(100%, 34rem);
   }
 
-  .detail-art {
+  .detail-card-preview .tcg-card {
     min-height: auto;
     aspect-ratio: 2.5 / 3.5;
   }
@@ -2392,7 +2386,7 @@ button {
     z-index: 4;
   }
 
-  .detail-art {
+  .detail-card-preview {
     width: min(100%, 16rem);
     min-height: auto;
     max-height: 42dvh;
@@ -2401,7 +2395,12 @@ button {
     margin-top: 2.4rem;
   }
 
-  .card-detail.has-variants .detail-art {
+  .detail-card-preview .tcg-card {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .card-detail.has-variants .detail-card-preview {
     width: min(100%, 14.5rem);
     max-height: 34dvh;
   }
@@ -2436,6 +2435,10 @@ button {
   .detail-variant-toggle {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .detail-download-button {
+    width: 100%;
   }
 
   .detail-list {
@@ -2480,12 +2483,12 @@ button {
     width: min(9rem, 50vw);
   }
 
-  .detail-art {
+  .detail-card-preview {
     width: min(100%, 13rem);
     max-height: 38dvh;
   }
 
-  .card-detail.has-variants .detail-art {
+  .card-detail.has-variants .detail-card-preview {
     width: min(100%, 12rem);
     max-height: 31dvh;
   }
