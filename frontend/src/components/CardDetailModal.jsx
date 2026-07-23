@@ -71,21 +71,7 @@ async function imageToDataUrl(src) {
   return blobToDataUrl(await response.blob());
 }
 
-async function prepareExportImages(root) {
-  const artImages = Array.from(root.querySelectorAll(".card-art img"));
-  await Promise.all(artImages.map(async (image) => {
-    const imageData = await imageToDataUrl(image.currentSrc || image.src);
-    const art = image.closest(".card-art");
-
-    if (art && imageData) {
-      art.style.backgroundImage = `url("${imageData}")`;
-      art.style.backgroundPosition = "center";
-      art.style.backgroundSize = "cover";
-      art.style.backgroundRepeat = "no-repeat";
-      image.remove();
-    }
-  }));
-
+async function inlineImages(root) {
   const images = Array.from(root.querySelectorAll("img"));
   await Promise.all(images.map(async (image) => {
     image.setAttribute("src", await imageToDataUrl(image.currentSrc || image.src));
@@ -189,7 +175,7 @@ async function renderCardPng(cardNode) {
   clone.style.margin = "0";
   clone.style.transform = "none";
 
-  await prepareExportImages(clone);
+  await inlineImages(clone);
 
   const css = `${readCardStyles()}
     .download-card-root {
@@ -211,14 +197,13 @@ async function renderCardPng(cardNode) {
 
     .download-card-root .card-art {
       z-index: 0 !important;
-      overflow: hidden !important;
-      background-position: center !important;
-      background-size: cover !important;
-      background-repeat: no-repeat !important;
     }
 
     .download-card-root .card-art img {
-      display: none !important;
+      display: block !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
     }
 
     .download-card-root .card-vignette {
@@ -227,20 +212,6 @@ async function renderCardPng(cardNode) {
 
     .download-card-root .holo-layer {
       z-index: 2 !important;
-      opacity: 0.52 !important;
-      mix-blend-mode: normal !important;
-      background-blend-mode: screen, hue, hard-light !important;
-      filter: brightness(0.72) contrast(1.55) saturate(0.9) !important;
-    }
-
-    .download-card-root .holo-layer::before {
-      opacity: 0.32 !important;
-      mix-blend-mode: normal !important;
-    }
-
-    .download-card-root .holo-layer::after {
-      opacity: 0.16 !important;
-      mix-blend-mode: normal !important;
     }
 
     .download-card-root .card-topline,
