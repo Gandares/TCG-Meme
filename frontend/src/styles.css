@@ -902,6 +902,15 @@ button {
   will-change: transform;
 }
 
+.tcg-card.no-tilt {
+  touch-action: pan-y;
+  transform: none;
+}
+
+.tcg-card.no-tilt::after {
+  opacity: 0 !important;
+}
+
 .tcg-card.rarity-comun {
   --rarity-color: #d5dde5;
   --rarity-glow: rgba(213, 221, 229, 0.24);
