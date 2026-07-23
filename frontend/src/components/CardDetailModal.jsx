@@ -3,13 +3,6 @@ import { assetUrl } from "../api/cards";
 import { Card } from "./Card";
 import { cardVariants, effectiveRarity, getCollectionCount, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
 
-const rarityColors = {
-  Comun: "#d5dde5",
-  Rara: "#6fc7ff",
-  Epica: "#d78aff",
-  Legendaria: "#ffd166",
-};
-
 function safeFileName(value) {
   return String(value || "carta")
     .normalize("NFD")
@@ -120,7 +113,6 @@ async function renderCardPng(card, variant) {
   const context = canvas.getContext("2d");
   const imagePath = variant === "alternative" ? card.alternativeImage || card.image : card.image;
   const image = await loadImage(assetUrl(imagePath));
-  const rarityColor = rarityColors[card.displayRarity] || rarityColors.Comun;
 
   if (!context) {
     throw new Error("No se pudo preparar la carta.");
@@ -144,15 +136,6 @@ async function renderCardPng(card, variant) {
   vignette.addColorStop(1, "rgba(0, 0, 0, 0.58)");
   context.fillStyle = vignette;
   context.fillRect(0, 0, width, height);
-
-  context.lineWidth = 14;
-  context.strokeStyle = rarityColor;
-  roundedRect(context, 10, 10, width - 20, height - 20, 18);
-  context.stroke();
-  context.lineWidth = 3;
-  context.strokeStyle = "rgba(255, 255, 255, 0.18)";
-  roundedRect(context, 28, 28, width - 56, height - 56, 14);
-  context.stroke();
 
   if (variant !== "alternative") {
     context.fillStyle = "rgba(8, 10, 12, 0.56)";
@@ -285,20 +268,6 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
             <strong>{card.expansion?.name || "Sin expansion"}</strong>
           </section>
 
-          <dl className="detail-list">
-            <div>
-              <dt>Descripción</dt>
-              <dd>{card.description || "Sin descripcion."}</dd>
-            </div>
-            <div>
-              <dt>Texto flavour</dt>
-              <dd>{card.flavor || "Sin flavour text."}</dd>
-            </div>
-            <div>
-              <dt>Creador</dt>
-              <dd>{card.author || "Creador anonimo"}</dd>
-            </div>
-          </dl>
         </div>
       </section>
     </div>
