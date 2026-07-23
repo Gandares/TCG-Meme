@@ -1107,19 +1107,6 @@ button {
     calc(var(--glare-x) * -0.14) calc(var(--glare-y) * -0.14);
 }
 
-.holo-badge {
-  flex: 0 0 auto;
-  padding: 0.22rem 0.42rem;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.34);
-  color: #fff6b7;
-  font-size: 0.64rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
-}
-
 .tcg-card::after {
   content: "";
   position: absolute;

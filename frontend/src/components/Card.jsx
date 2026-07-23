@@ -47,7 +47,6 @@ export function Card({ card, count, locked = false }) {
           <div className="card-vignette" />
           <div className="card-topline">
             <strong>{card.name}</strong>
-            {variant === "holo" ? <span className="holo-badge">Holo</span> : null}
           </div>
           <div className="card-body">
             <p>{card.description || "Sin descripcion."}</p>
