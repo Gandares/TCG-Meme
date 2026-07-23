@@ -844,7 +844,7 @@ function parseMultipart(buffer, boundary) {
 
 function createCard(payload, user) {
   const name = cleanText(payload.name, 28);
-  const description = cleanText(payload.description, 130);
+  const description = cleanText(payload.description, 110);
   const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
   if (!userHasExpansion(normalizeUserCollectionEntities(user), expansion.id)) {
     throw new Error("No te has unido a esta expansion.");
@@ -882,7 +882,7 @@ function createCard(payload, user) {
     image: saveImage(id, payload.image),
     alternativeImage: saveImage(id, payload.alternativeImage, "alternative"),
     description,
-    flavor: cleanText(payload.flavor, 120),
+    flavor: cleanText(payload.flavor, 90),
     author: cleanText(user?.username, 28) || "Creador anonimo",
   };
 }
