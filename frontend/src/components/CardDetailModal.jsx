@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { assetUrl } from "../api/cards";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "./Card";
 import { cardVariants, effectiveRarity, getCollectionCount, rarityClass, variantLabel, withCardVariant } from "../utils/cards";
 
@@ -12,203 +11,267 @@ function safeFileName(value) {
     .toLowerCase() || "carta";
 }
 
-function loadImage(src) {
-  return new Promise((resolve, reject) => {
-    if (!src) {
-      reject(new Error("La carta no tiene imagen."));
-      return;
-    }
+const cardStyleMarkers = [
+  ".tcg-card",
+  ".card-art",
+  ".card-vignette",
+  ".holo-layer",
+  ".card-topline",
+  ".card-body",
+  ".card-footer",
+  ".card-holo",
+  ".card-alternative",
+];
 
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.addEventListener("load", () => resolve(image), { once: true });
-    image.addEventListener("error", () => reject(new Error("No se pudo cargar la imagen de la carta.")), { once: true });
-    image.src = src;
-  });
+function isCardStyleRule(ruleText) {
+  return cardStyleMarkers.some((marker) => ruleText.includes(marker));
 }
 
-function roundedRect(context, x, y, width, height, radius) {
-  context.beginPath();
-  context.moveTo(x + radius, y);
-  context.arcTo(x + width, y, x + width, y + height, radius);
-  context.arcTo(x + width, y + height, x, y + height, radius);
-  context.arcTo(x, y + height, x, y, radius);
-  context.arcTo(x, y, x + width, y, radius);
-  context.closePath();
+function serializeCardRule(rule) {
+  if ("cssRules" in rule) {
+    const nestedRules = Array.from(rule.cssRules).map(serializeCardRule).filter(Boolean).join("\n");
+    return nestedRules ? `${rule.conditionText ? `@media ${rule.conditionText}` : rule.name} {\n${nestedRules}\n}` : "";
+  }
+
+  return isCardStyleRule(rule.cssText) ? rule.cssText : "";
 }
 
-function drawCoverImage(context, image, x, y, width, height) {
-  const imageRatio = image.width / image.height;
-  const targetRatio = width / height;
-  const drawWidth = imageRatio > targetRatio ? height * imageRatio : width;
-  const drawHeight = imageRatio > targetRatio ? height : width / imageRatio;
-  const drawX = x + (width - drawWidth) / 2;
-  const drawY = y + (height - drawHeight) / 2;
-
-  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
-}
-
-function drawWrappedText(context, text, x, y, maxWidth, lineHeight, maxLines) {
-  const words = String(text || "").split(/\s+/).filter(Boolean);
-  let line = "";
-  let lines = 0;
-
-  for (const word of words) {
-    const nextLine = line ? `${line} ${word}` : word;
-    if (context.measureText(nextLine).width > maxWidth && line) {
-      context.fillText(line, x, y);
-      y += lineHeight;
-      lines += 1;
-      line = word;
-      if (lines >= maxLines) {
-        return y;
+function readCardStyles() {
+  return Array.from(document.styleSheets)
+    .map((styleSheet) => {
+      try {
+        return Array.from(styleSheet.cssRules).map(serializeCardRule).filter(Boolean).join("\n");
+      } catch {
+        return "";
       }
-    } else {
-      line = nextLine;
-    }
-  }
-
-  if (line && lines < maxLines) {
-    context.fillText(line, x, y);
-    y += lineHeight;
-  }
-
-  return y;
-}
-
-function drawHoloEffect(context, width, height) {
-  context.save();
-  context.globalCompositeOperation = "screen";
-  context.globalAlpha = 0.5;
-
-  const rainbow = context.createLinearGradient(0, 0, 0, height);
-  rainbow.addColorStop(0, "rgba(255, 119, 115, 0.28)");
-  rainbow.addColorStop(0.17, "rgba(255, 237, 95, 0.32)");
-  rainbow.addColorStop(0.34, "rgba(168, 255, 95, 0.28)");
-  rainbow.addColorStop(0.5, "rgba(131, 255, 247, 0.34)");
-  rainbow.addColorStop(0.67, "rgba(120, 148, 255, 0.3)");
-  rainbow.addColorStop(0.84, "rgba(216, 117, 255, 0.32)");
-  rainbow.addColorStop(1, "rgba(255, 119, 115, 0.24)");
-  context.fillStyle = rainbow;
-  context.fillRect(0, 0, width, height);
-
-  context.globalAlpha = 0.28;
-  context.translate(width / 2, height / 2);
-  context.rotate((133 * Math.PI) / 180);
-  context.translate(-width / 2, -height / 2);
-
-  for (let x = -height; x < width + height; x += 46) {
-    const band = context.createLinearGradient(x, 0, x + 34, 0);
-    band.addColorStop(0, "rgba(14, 21, 46, 0)");
-    band.addColorStop(0.35, "rgba(255, 255, 255, 0.34)");
-    band.addColorStop(0.5, "rgba(131, 255, 247, 0.28)");
-    band.addColorStop(0.65, "rgba(255, 237, 95, 0.24)");
-    band.addColorStop(1, "rgba(14, 21, 46, 0)");
-    context.fillStyle = band;
-    context.fillRect(x, -height, 18, height * 3);
-  }
-
-  context.restore();
-
-  context.save();
-  context.globalCompositeOperation = "screen";
-  context.globalAlpha = 0.12;
-  context.fillStyle = "rgba(255, 255, 255, 0.5)";
-  for (let y = 24; y < height; y += 80) {
-    for (let x = 20; x < width; x += 80) {
-      context.beginPath();
-      context.arc(x + ((Math.floor(y / 80) % 2) * 26), y, 2.4, 0, Math.PI * 2);
-      context.fill();
-    }
-  }
-  context.restore();
-}
-
-function canvasToBlob(canvas) {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo crear el PNG."))), "image/png");
-  });
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
-    reader.addEventListener("error", () => reject(new Error("No se pudo preparar la descarga.")), { once: true });
+    reader.addEventListener("error", () => reject(new Error("No se pudo preparar una imagen de la carta.")), { once: true });
     reader.readAsDataURL(blob);
   });
 }
 
-async function renderCardPng(card, variant) {
-  const width = 750;
-  const height = 1050;
-  const padding = 34;
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  const imagePath = variant === "alternative" ? card.alternativeImage || card.image : card.image;
-  const image = await loadImage(assetUrl(imagePath));
-
-  if (!context) {
-    throw new Error("No se pudo preparar la descarga.");
+async function imageToDataUrl(src) {
+  if (!src || src.startsWith("data:")) {
+    return src;
   }
 
-  canvas.width = width;
-  canvas.height = height;
-
-  roundedRect(context, 0, 0, width, height, 22);
-  context.clip();
-  context.fillStyle = "#111315";
-  context.fillRect(0, 0, width, height);
-  drawCoverImage(context, image, 0, 0, width, height);
-
-  if (variant === "holo" || variant === "alternative") {
-    drawHoloEffect(context, width, height);
+  const response = await fetch(src, { mode: "cors" });
+  if (!response.ok) {
+    throw new Error("No se pudo cargar una imagen de la carta.");
   }
 
-  const vignette = context.createRadialGradient(width / 2, height / 2, 120, width / 2, height / 2, 690);
-  vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-  vignette.addColorStop(1, "rgba(0, 0, 0, 0.56)");
-  context.fillStyle = vignette;
-  context.fillRect(0, 0, width, height);
+  return blobToDataUrl(await response.blob());
+}
 
-  if (variant !== "alternative") {
-    context.fillStyle = "rgba(8, 10, 12, 0.48)";
-    roundedRect(context, padding, padding, width - padding * 2, 96, 12);
-    context.fill();
+async function prepareExportImages(root) {
+  const artImages = Array.from(root.querySelectorAll(".card-art img"));
+  await Promise.all(artImages.map(async (image) => {
+    const imageData = await imageToDataUrl(image.currentSrc || image.src);
+    const art = image.closest(".card-art");
 
-    context.fillStyle = "#fff7e5";
-    context.font = "800 42px Inter, Arial, sans-serif";
-    drawWrappedText(context, card.name, padding + 24, padding + 48, width - padding * 2 - 48, 40, 2);
+    if (art && imageData) {
+      art.style.backgroundImage = `url("${imageData}")`;
+      art.style.backgroundPosition = "center";
+      art.style.backgroundSize = "cover";
+      art.style.backgroundRepeat = "no-repeat";
+      image.remove();
+    }
+  }));
 
-    context.fillStyle = "rgba(8, 10, 12, 0.42)";
-    roundedRect(context, padding, 704, width - padding * 2, 228, 12);
-    context.fill();
+  const images = Array.from(root.querySelectorAll("img"));
+  await Promise.all(images.map(async (image) => {
+    image.setAttribute("src", await imageToDataUrl(image.currentSrc || image.src));
+    image.removeAttribute("loading");
+  }));
+}
 
-    context.fillStyle = "#f4efe3";
-    context.font = "500 25px Inter, Arial, sans-serif";
-    const cursorY = drawWrappedText(context, card.description || "Sin descripcion.", padding + 24, 752, width - padding * 2 - 48, 32, 4);
+function svgTextToPngBlob(svgText, width, height, scale = 3) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`;
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error("No se pudo renderizar la carta descargable."));
+      }
+    }, 7000);
 
-    context.fillStyle = "rgba(255, 247, 229, 0.78)";
-    context.font = "italic 23px Georgia, serif";
-    drawWrappedText(context, card.flavor || "", padding + 24, cursorY + 18, width - padding * 2 - 48, 30, 3);
+    image.addEventListener("load", () => {
+      if (settled) {
+        return;
+      }
 
-    context.fillStyle = "rgba(8, 10, 12, 0.5)";
-    roundedRect(context, padding, 956, width - padding * 2, 58, 12);
-    context.fill();
-    context.fillStyle = "#fff7e5";
-    context.font = "800 24px Inter, Arial, sans-serif";
-    context.fillText(card.author || "Creador anonimo", padding + 24, 993);
+      settled = true;
+      window.clearTimeout(timeoutId);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("No se pudo preparar la descarga."));
+        return;
+      }
+
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      context.scale(scale, scale);
+      context.drawImage(image, 0, 0, width, height);
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo crear el PNG."))), "image/png");
+    }, { once: true });
+
+    image.addEventListener("error", () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      window.clearTimeout(timeoutId);
+      reject(new Error("No se pudo renderizar la carta descargable."));
+    }, { once: true });
+
+    image.src = svgUrl;
+  });
+}
+
+function createCardSvgText(clone, css, width, height) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+  const wrapper = document.createElement("div");
+  const style = document.createElement("style");
+
+  svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  svg.setAttribute("width", String(width));
+  svg.setAttribute("height", String(height));
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  foreignObject.setAttribute("width", "100%");
+  foreignObject.setAttribute("height", "100%");
+  wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+  wrapper.setAttribute("class", "download-card-root");
+  style.textContent = css;
+
+  wrapper.append(style, clone);
+  foreignObject.append(wrapper);
+  svg.append(foreignObject);
+
+  return new XMLSerializer().serializeToString(svg);
+}
+
+async function renderCardPng(cardNode) {
+  if (!cardNode) {
+    throw new Error("No se pudo encontrar la carta para descargar.");
   }
 
-  return canvasToBlob(canvas);
+  const card = cardNode.querySelector(".tcg-card");
+
+  if (!card) {
+    throw new Error("No se pudo encontrar la carta para descargar.");
+  }
+
+  const width = Math.ceil(card.offsetWidth || card.getBoundingClientRect().width);
+  const height = Math.ceil(card.offsetHeight || card.getBoundingClientRect().height);
+  const clone = card.cloneNode(true);
+
+  clone.style.setProperty("--tilt-x", "0deg");
+  clone.style.setProperty("--tilt-y", "0deg");
+  clone.style.setProperty("--glare-x", "50%");
+  clone.style.setProperty("--glare-y", "50%");
+  clone.style.width = `${width}px`;
+  clone.style.height = `${height}px`;
+  clone.style.minHeight = `${height}px`;
+  clone.style.margin = "0";
+  clone.style.transform = "none";
+
+  await prepareExportImages(clone);
+
+  const css = `${readCardStyles()}
+    .download-card-root {
+      width: ${width}px;
+      height: ${height}px;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .download-card-root .tcg-card {
+      width: ${width}px !important;
+      height: ${height}px !important;
+      min-height: ${height}px !important;
+      margin: 0 !important;
+      transform: none !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .download-card-root .card-art {
+      z-index: 0 !important;
+      overflow: hidden !important;
+      background-position: center !important;
+      background-size: cover !important;
+      background-repeat: no-repeat !important;
+    }
+
+    .download-card-root .card-art img {
+      display: none !important;
+    }
+
+    .download-card-root .card-vignette {
+      z-index: 1 !important;
+    }
+
+    .download-card-root .holo-layer {
+      z-index: 2 !important;
+      opacity: 0.52 !important;
+      mix-blend-mode: normal !important;
+      background-blend-mode: screen, hue, hard-light !important;
+      filter: brightness(0.72) contrast(1.55) saturate(0.9) !important;
+    }
+
+    .download-card-root .holo-layer::before {
+      opacity: 0.32 !important;
+      mix-blend-mode: normal !important;
+    }
+
+    .download-card-root .holo-layer::after {
+      opacity: 0.16 !important;
+      mix-blend-mode: normal !important;
+    }
+
+    .download-card-root .card-topline,
+    .download-card-root .card-body,
+    .download-card-root .card-footer {
+      z-index: 3 !important;
+    }
+
+    .download-card-root .card-alternative .card-art {
+      z-index: 0 !important;
+    }
+
+    .download-card-root .card-alternative .holo-layer {
+      z-index: 1 !important;
+    }
+
+    .download-card-root .tcg-card::after {
+      opacity: 0 !important;
+    }
+  `;
+  const svgText = createCardSvgText(clone, css, width, height);
+
+  return svgTextToPngBlob(svgText, width, height);
 }
 
 export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
   const defaultVariant = cardVariants.includes(variant) ? variant : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
-  const [isPreparingDownload, setIsPreparingDownload] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
-  const [downloadUrl, setDownloadUrl] = useState("");
+  const cardPreviewRef = useRef(null);
   const availableVariants = useMemo(() => {
     if (!collection) {
       return [defaultVariant];
@@ -222,84 +285,29 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
   const displayCard = withCardVariant(card, displayVariant);
   const isHolographic = displayVariant === "holo" || displayVariant === "alternative";
   const displayCount = collection ? getCollectionCount(collection, card.id, displayVariant) : count;
-  const downloadName = `${safeFileName(displayCard.name)}-${displayVariant}.png`;
 
   useEffect(() => {
     setSelectedVariant(defaultVariant);
   }, [defaultVariant, card.id]);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    setIsPreparingDownload(true);
-    setDownloadError("");
-    setDownloadUrl("");
-
-    renderCardPng(displayCard, displayVariant)
-      .then(blobToDataUrl)
-      .then((blob) => {
-        if (isCancelled) {
-          return;
-        }
-
-        setDownloadUrl(blob);
-      })
-      .catch((error) => {
-        if (!isCancelled) {
-          setDownloadError(error.message || "No se pudo preparar la carta.");
-        }
-      })
-      .finally(() => {
-        if (!isCancelled) {
-          setIsPreparingDownload(false);
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [
-    card.alternativeImage,
-    card.author,
-    card.description,
-    card.flavor,
-    card.id,
-    card.image,
-    card.name,
-    displayVariant,
-  ]);
-
-  async function handleDownloadClick(event) {
-    if (!downloadUrl) {
-      event.preventDefault();
-      return;
-    }
-
-    if (!("showSaveFilePicker" in window)) {
-      return;
-    }
-
-    event.preventDefault();
+  async function handleDownloadCard() {
+    setIsDownloading(true);
     setDownloadError("");
 
     try {
-      const fileHandle = await window.showSaveFilePicker({
-        suggestedName: downloadName,
-        types: [
-          {
-            description: "Imagen PNG",
-            accept: { "image/png": [".png"] },
-          },
-        ],
-      });
-      const writable = await fileHandle.createWritable();
-      const response = await fetch(downloadUrl);
-      await writable.write(await response.blob());
-      await writable.close();
+      const blob = await renderCardPng(cardPreviewRef.current);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${safeFileName(displayCard.name)}-${displayVariant}.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (error) {
-      if (error.name !== "AbortError") {
-        setDownloadError(error.message || "No se pudo descargar la carta.");
-      }
+      setDownloadError(error.message || "No se pudo descargar la carta.");
+    } finally {
+      setIsDownloading(false);
     }
   }
 
@@ -316,7 +324,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
           x
         </button>
 
-        <div className="detail-card-preview">
+        <div className="detail-card-preview" ref={cardPreviewRef}>
           <Card card={displayCard} />
         </div>
 
@@ -346,21 +354,16 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
             </div>
           ) : null}
 
-          <a
-            className={`primary-button detail-download-button ${!downloadUrl ? "disabled" : ""}`}
-            href={downloadUrl || "#"}
-            download={downloadName}
-            aria-disabled={!downloadUrl}
-            onClick={handleDownloadClick}
-          >
-            {isPreparingDownload ? "Preparando..." : "Descargar carta"}
-          </a>
+          <button className="primary-button detail-download-button" type="button" onClick={handleDownloadCard} disabled={isDownloading}>
+            {isDownloading ? "Preparando..." : "Descargar carta"}
+          </button>
           {downloadError ? <p className="detail-download-error">{downloadError}</p> : null}
 
-          <section className="detail-expansion-panel" aria-label="Expansion de la carta">
-            <span>Expansion</span>
+          <section className="detail-expansion-panel" aria-label="Expansión de la carta">
+            <span>Expansión</span>
             <strong>{card.expansion?.name || "Sin expansion"}</strong>
           </section>
+
         </div>
       </section>
     </div>
