@@ -161,8 +161,9 @@ async function renderCardPng(cardNode) {
     throw new Error("No se pudo encontrar la carta para descargar.");
   }
 
-  const width = Math.ceil(card.offsetWidth || card.getBoundingClientRect().width);
-  const height = Math.ceil(card.offsetHeight || card.getBoundingClientRect().height);
+  const bounds = card.getBoundingClientRect();
+  const width = Math.ceil(bounds.width);
+  const height = Math.ceil(bounds.height);
   const clone = card.cloneNode(true);
 
   clone.style.setProperty("--tilt-x", "0deg");
@@ -193,39 +194,6 @@ async function renderCardPng(cardNode) {
       transform: none !important;
       border-color: transparent !important;
       box-shadow: none !important;
-    }
-
-    .download-card-root .card-art {
-      z-index: 0 !important;
-    }
-
-    .download-card-root .card-art img {
-      display: block !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
-    }
-
-    .download-card-root .card-vignette {
-      z-index: 1 !important;
-    }
-
-    .download-card-root .holo-layer {
-      z-index: 2 !important;
-    }
-
-    .download-card-root .card-topline,
-    .download-card-root .card-body,
-    .download-card-root .card-footer {
-      z-index: 3 !important;
-    }
-
-    .download-card-root .card-alternative .card-art {
-      z-index: 0 !important;
-    }
-
-    .download-card-root .card-alternative .holo-layer {
-      z-index: 1 !important;
     }
 
     .download-card-root .tcg-card::after {
