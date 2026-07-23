@@ -2133,6 +2133,10 @@ button {
     margin-inline: auto;
   }
 
+  .tcg-card .card-topline strong {
+    font-size: 0.82rem;
+  }
+
   .card-grid .tcg-card {
     min-height: 14.4rem;
     max-width: none;
@@ -2151,6 +2155,7 @@ button {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    font-size: 0.6rem;
   }
 
   .card-grid .card-body {
@@ -2253,6 +2258,10 @@ button {
   .reveal-card .tcg-card {
     min-height: 12.6rem;
     max-width: 9rem;
+  }
+
+  .reveal-card .card-topline strong {
+    font-size: 0.68rem;
   }
 
   .reveal-flip-card,
