@@ -704,10 +704,10 @@ function resolveRecentPulls(cardIds) {
 
 function weightedRandomCard(cards) {
   const weights = {
-    Comun: 58,
+    Comun: 61,
     Rara: 28,
-    Epica: 11,
-    Legendaria: 3,
+    Epica: 9,
+    Legendaria: 2,
   };
   const candidates = cards.flatMap((card) => {
     return [withCardVariant(card, "normal"), withCardVariant(card, "holo"), withCardVariant(card, "alternative")];
