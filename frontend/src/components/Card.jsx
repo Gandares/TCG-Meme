@@ -1,7 +1,7 @@
 import { assetUrl } from "../api/cards";
 import { effectiveRarity, initials, rarityClass } from "../utils/cards";
 
-export function Card({ card, count, locked = false, enableTilt = true, artOnly = false }) {
+export function Card({ card, count, locked = false, enableTilt = true, artOnly = false, imageLoading = "lazy" }) {
   const variant = card.variant === "holo" || card.variant === "alternative" ? card.variant : "normal";
   const isHolographic = variant === "holo" || variant === "alternative";
   const hideText = artOnly || variant === "alternative";
@@ -63,7 +63,7 @@ export function Card({ card, count, locked = false, enableTilt = true, artOnly =
       onPointerLeave={enableTilt ? resetTilt : undefined}
     >
       <div className="card-art">
-        {image ? <img src={image} alt={card.name} loading="lazy" draggable="false" /> : initials(card.name)}
+        {image ? <img src={image} alt={card.name} loading={imageLoading} draggable="false" /> : initials(card.name)}
       </div>
       {isHolographic ? <div className="holo-layer" /> : null}
       {hideText ? null : (
