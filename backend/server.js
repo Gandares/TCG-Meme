@@ -379,6 +379,13 @@ function cleanEntityId(value) {
     .slice(0, 80);
 }
 
+function cleanRouteEntityId(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .slice(0, 180);
+}
+
 function readUsers() {
   try {
     const content = fs.readFileSync(usersFile, "utf8").trim();
@@ -900,7 +907,7 @@ function createCard(payload, user) {
 }
 
 function updateCard(cardId, payload, user) {
-  const normalizedCardId = cleanEntityId(decodeURIComponent(cardId));
+  const normalizedCardId = cleanRouteEntityId(decodeURIComponent(cardId));
   const cards = readCards();
   const index = cards.findIndex((card) => card.id === normalizedCardId);
   if (index === -1) {
