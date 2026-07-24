@@ -1326,6 +1326,7 @@ button {
   justify-content: space-between;
   gap: 1rem;
   align-items: start;
+  padding-right: 3rem;
 }
 
 .detail-heading h2,
@@ -2435,6 +2436,7 @@ button {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.65rem;
     align-items: start;
+    padding-right: 0;
   }
 
   .detail-heading h2 {
