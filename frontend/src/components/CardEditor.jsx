@@ -74,6 +74,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
 
   async function handleSubmit(event) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     if (!selectedCard || isSaving) {
       return;
     }
@@ -100,7 +101,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
         imageFile: form.imageFile,
         alternativeImageFile: form.alternativeImageFile,
       });
-      event.currentTarget.reset();
+      formElement.reset();
       setForm(createForm(savedCard));
       setSuccess("Carta actualizada.");
     } catch (saveError) {
