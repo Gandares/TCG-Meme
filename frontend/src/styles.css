@@ -345,6 +345,7 @@ button {
 }
 
 .primary-button,
+.secondary-button,
 .ghost-button,
 .search-input,
 .editor-form input,
@@ -360,6 +361,14 @@ button {
   color: white;
   font-weight: 800;
   box-shadow: 0 12px 24px rgba(232, 79, 61, 0.24);
+}
+
+.secondary-button {
+  border: 1px solid rgba(242, 201, 76, 0.48);
+  padding: 0 1rem;
+  background: rgba(242, 201, 76, 0.12);
+  color: #ffe6a3;
+  font-weight: 800;
 }
 
 .ghost-button {
@@ -1326,6 +1335,7 @@ button {
   justify-content: space-between;
   gap: 1rem;
   align-items: start;
+  padding-right: 3rem;
 }
 
 .detail-heading h2,
@@ -1383,6 +1393,12 @@ button {
 
 .detail-download-button {
   width: fit-content;
+}
+
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }
 
 .detail-download-error {
@@ -1479,6 +1495,16 @@ button {
   background: var(--panel-soft);
   color: var(--text);
   font-weight: 800;
+}
+
+.selected-file-name {
+  display: block;
+  min-width: 0;
+  color: rgba(255, 247, 229, 0.72);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .search-input {
@@ -2425,6 +2451,7 @@ button {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.65rem;
     align-items: start;
+    padding-right: 0;
   }
 
   .detail-heading h2 {
@@ -2448,6 +2475,11 @@ button {
 
   .detail-download-button {
     width: 100%;
+  }
+
+  .detail-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .detail-list {

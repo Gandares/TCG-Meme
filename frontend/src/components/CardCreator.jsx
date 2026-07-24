@@ -148,10 +148,12 @@ export function CardCreator({ user, expansions = [], selectedExpansionId = "", o
           <label>
             Imagen *
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleImageChange} />
+            <span className="selected-file-name">{form.imageFile?.name || "Ninguna imagen seleccionada"}</span>
           </label>
           <label>
             Imagen alternativa *
             <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" required onChange={handleAlternativeImageChange} />
+            <span className="selected-file-name">{form.alternativeImageFile?.name || "Ninguna imagen seleccionada"}</span>
           </label>
           <label>
             Descripción *

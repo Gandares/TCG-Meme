@@ -174,6 +174,7 @@ async function renderCardPng(card, variant) {
 export function CardDetailModal({ card, count, collection, variant = "normal", onClose }) {
   const defaultVariant = cardVariants.includes(variant) ? variant : "normal";
   const [selectedVariant, setSelectedVariant] = useState(defaultVariant);
+  const [isArtOnly, setIsArtOnly] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
   const availableVariants = useMemo(() => {
@@ -192,6 +193,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
 
   useEffect(() => {
     setSelectedVariant(defaultVariant);
+    setIsArtOnly(false);
   }, [defaultVariant, card.id]);
 
   async function handleDownloadCard() {
@@ -229,7 +231,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
         </button>
 
         <div className="detail-card-preview">
-          <Card card={displayCard} />
+          <Card card={displayCard} artOnly={isArtOnly} />
         </div>
 
         <div className="detail-content">
@@ -258,9 +260,14 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
             </div>
           ) : null}
 
-          <button className="primary-button detail-download-button" type="button" onClick={handleDownloadCard} disabled={isDownloading}>
-            {isDownloading ? "Preparando..." : "Descargar carta"}
-          </button>
+          <div className="detail-actions">
+            <button className="secondary-button" type="button" onClick={() => setIsArtOnly((current) => !current)}>
+              {isArtOnly ? "Ver carta" : "Ver arte"}
+            </button>
+            <button className="primary-button detail-download-button" type="button" onClick={handleDownloadCard} disabled={isDownloading}>
+              {isDownloading ? "Preparando..." : "Descargar carta"}
+            </button>
+          </div>
           {downloadError ? <p className="detail-download-error">{downloadError}</p> : null}
 
           <section className="detail-expansion-panel" aria-label="Expansión de la carta">

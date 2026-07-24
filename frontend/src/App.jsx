@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, joinExpansion, loadAuth, openPack, saveAuth, sellDuplicateCards } from "./api/cards";
+import { clearAuth, createCard, fetchCards, fetchCollection, fetchExpansions, joinExpansion, loadAuth, openPack, saveAuth, sellDuplicateCards, updateCard } from "./api/cards";
 import { AuthView } from "./components/AuthView";
 import { CardCreator } from "./components/CardCreator";
+import { CardEditor } from "./components/CardEditor";
 import { CollectionView } from "./components/CollectionView";
 import { PackOpening } from "./components/PackOpening";
 import { Sidebar } from "./components/Sidebar";
@@ -143,6 +144,12 @@ export default function App() {
     setActiveView("packs");
   }
 
+  async function handleUpdateCard(cardId, card) {
+    const savedCard = await updateCard(cardId, card, auth.token);
+    setCards((currentCards) => currentCards.map((currentCard) => (currentCard.id === savedCard.id ? savedCard : currentCard)));
+    return savedCard;
+  }
+
   async function handleSellDuplicates() {
     const result = await sellDuplicateCards(auth.token);
     setCollection(result.collection || {});
@@ -173,7 +180,7 @@ export default function App() {
   const visibleExpansionIds = new Set(visibleExpansions.map((expansion) => expansion.id));
   const visibleCards = cards.filter((card) => visibleExpansionIds.has(card.expansionId));
   const canCreateCards = visibleExpansions.length > 0;
-  const currentView = activeView === "creator" && !canCreateCards ? "packs" : activeView;
+  const currentView = (activeView === "creator" || activeView === "editor") && !canCreateCards ? "packs" : activeView;
 
   return (
     <div className="app-shell">
@@ -200,6 +207,7 @@ export default function App() {
         ) : null}
         {currentView === "collection" ? <CollectionView cards={visibleCards} collection={collection} expansions={visibleExpansions} onSellDuplicates={handleSellDuplicates} /> : null}
         {currentView === "creator" ? <CardCreator user={auth.user} expansions={visibleExpansions} selectedExpansionId={selectedExpansionId} onCreateCard={handleCreateCard} /> : null}
+        {currentView === "editor" ? <CardEditor user={auth.user} cards={visibleCards} expansions={visibleExpansions} onUpdateCard={handleUpdateCard} /> : null}
       </main>
     </div>
   );

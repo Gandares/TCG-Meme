@@ -163,3 +163,29 @@ export async function createCard(card, token) {
 
   return response.json();
 }
+
+export async function updateCard(cardId, card, token) {
+  const body = new FormData();
+  body.set("name", card.name);
+  body.set("description", card.description);
+  body.set("flavor", card.flavor);
+  if (card.imageFile) {
+    body.set("image", card.imageFile);
+  }
+  if (card.alternativeImageFile) {
+    body.set("alternativeImage", card.alternativeImageFile);
+  }
+
+  const response = await fetch(`${API_BASE}/api/cards/${encodeURIComponent(cardId)}`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "No se pudo actualizar la carta.");
+  }
+
+  return response.json();
+}

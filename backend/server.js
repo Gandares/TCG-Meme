@@ -130,6 +130,18 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  const cardMatch = requestUrl.pathname.match(/^\/api\/cards\/([^/]+)$/);
+  if (cardMatch && request.method === "PATCH") {
+    try {
+      const user = requireUser(request);
+      const payload = await readRequestBody(request);
+      sendJson(response, updateCard(cardMatch[1], payload, user));
+    } catch (error) {
+      sendJson(response, { error: error.message || "No se pudo actualizar la carta." }, 400);
+    }
+    return;
+  }
+
   if (requestUrl.pathname === "/api/collection" && request.method === "GET") {
     try {
       const user = requireUser(request);
@@ -367,6 +379,13 @@ function cleanEntityId(value) {
     .slice(0, 80);
 }
 
+function cleanRouteEntityId(value) {
+  return String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, "")
+    .slice(0, 180);
+}
+
 function readUsers() {
   try {
     const content = fs.readFileSync(usersFile, "utf8").trim();
@@ -410,7 +429,7 @@ function registerUser(payload) {
     collectionItems: [],
     openedPacks: 0,
     recentPulls: [],
-    currency: 0,
+    currency: 100,
     currencyUpdatedAt: Date.now(),
   };
   users.push(user);
@@ -662,7 +681,7 @@ function applyCurrencyRegen(user) {
     return { currency: currentCurrency, updatedAt };
   }
 
-  const nextCurrency = clampCurrency(currentCurrency + earned);
+  const nextCurrency = Math.min(currencyMax, currentCurrency + earned);
   const nextUpdatedAt = nextCurrency >= currencyMax ? now : updatedAt + earned * currencyIntervalMs;
   return { currency: nextCurrency, updatedAt: nextUpdatedAt };
 }
@@ -887,11 +906,55 @@ function createCard(payload, user) {
   };
 }
 
-function cardNameExistsInExpansion(name, expansionId) {
+function updateCard(cardId, payload, user) {
+  const normalizedCardId = cleanRouteEntityId(decodeURIComponent(cardId));
+  const cards = readCards();
+  const index = cards.findIndex((card) => card.id === normalizedCardId);
+  if (index === -1) {
+    throw new Error("Carta no encontrada.");
+  }
+
+  const currentCard = cards[index];
+  if (normalizeUsername(currentCard.author) !== normalizeUsername(user?.username)) {
+    throw new Error("Solo puedes editar cartas creadas por ti.");
+  }
+
+  const name = cleanText(payload.name, 28);
+  const description = cleanText(payload.description, 110);
+  if (!name) {
+    throw new Error("El titulo es obligatorio.");
+  }
+  if (!description) {
+    throw new Error("La descripcion es obligatoria.");
+  }
+  if (cardNameExistsInExpansion(name, currentCard.expansionId, currentCard.id)) {
+    throw new Error("Ya existe una carta con ese nombre en esta expansion.");
+  }
+
+  const updatedCard = {
+    ...currentCard,
+    name,
+    type: "",
+    image: payload.image ? saveImage(currentCard.id, payload.image) : currentCard.image,
+    alternativeImage: payload.alternativeImage ? saveImage(currentCard.id, payload.alternativeImage, "alternative") : currentCard.alternativeImage,
+    description,
+    flavor: cleanText(payload.flavor, 90),
+    author: currentCard.author,
+    rarity: currentCard.rarity,
+    expansionId: currentCard.expansionId,
+    expansion: currentCard.expansion,
+  };
+
+  cards[index] = updatedCard;
+  writeCards(cards);
+  return attachExpansions([updatedCard])[0];
+}
+
+function cardNameExistsInExpansion(name, expansionId, ignoredCardId = "") {
   const normalizedName = normalizeNameKey(name);
   return readCardsFromFile(cardsFile)
     .map(normalizeCardExpansion)
-    .some((card) => card.expansionId === expansionId && normalizeNameKey(card.name) === normalizedName);
+    .some((card) => card.id !== ignoredCardId && card.expansionId === expansionId && normalizeNameKey(card.name) === normalizedName);
 }
 
 function saveImage(id, imageData, suffix = "") {
@@ -1040,6 +1103,6 @@ function sendJson(response, data, status = 200) {
 
 function setCorsHeaders(response) {
   response.setHeader("Access-Control-Allow-Origin", "*");
-  response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  response.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
   response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }

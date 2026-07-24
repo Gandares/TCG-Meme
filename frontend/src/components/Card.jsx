@@ -1,9 +1,10 @@
 import { assetUrl } from "../api/cards";
 import { effectiveRarity, initials, rarityClass } from "../utils/cards";
 
-export function Card({ card, count, locked = false, enableTilt = true }) {
+export function Card({ card, count, locked = false, enableTilt = true, artOnly = false }) {
   const variant = card.variant === "holo" || card.variant === "alternative" ? card.variant : "normal";
   const isHolographic = variant === "holo" || variant === "alternative";
+  const hideText = artOnly || variant === "alternative";
   const image = assetUrl(variant === "alternative" ? card.alternativeImage || card.image : card.image);
   const cardBackImage = assetUrl(card.expansion?.cardBackImage);
   const displayRarity = card.displayRarity || effectiveRarity(card, variant);
@@ -56,7 +57,7 @@ export function Card({ card, count, locked = false, enableTilt = true }) {
 
   return (
     <article
-      className={`tcg-card ${enableTilt ? "tilt-card" : "no-tilt"} ${rarityClass(displayRarity)} ${isHolographic ? "card-holo" : ""} ${variant === "alternative" ? "card-alternative" : ""}`}
+      className={`tcg-card ${enableTilt ? "tilt-card" : "no-tilt"} ${rarityClass(displayRarity)} ${isHolographic ? "card-holo" : ""} ${hideText ? "card-alternative" : ""}`}
       onContextMenu={preventCardMenu}
       onPointerMove={enableTilt ? handleTilt : undefined}
       onPointerLeave={enableTilt ? resetTilt : undefined}
@@ -65,7 +66,7 @@ export function Card({ card, count, locked = false, enableTilt = true }) {
         {image ? <img src={image} alt={card.name} loading="lazy" draggable="false" /> : initials(card.name)}
       </div>
       {isHolographic ? <div className="holo-layer" /> : null}
-      {variant === "alternative" ? null : (
+      {hideText ? null : (
         <>
           <div className="card-vignette" />
           <div className="card-topline">
