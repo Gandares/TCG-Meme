@@ -63,17 +63,16 @@ function TabIcon({ name }) {
     ),
     collection: (
       <>
-        <path d="M7 5h10v14H7z" />
-        <path d="M4 8h3v11" />
-        <path d="M17 8h3v11" />
+        <path d="M5 5h6v6H5z" />
+        <path d="M13 5h6v6h-6z" />
+        <path d="M5 13h6v6H5z" />
+        <path d="M13 13h6v6h-6z" />
       </>
     ),
     create: (
       <>
         <path d="M12 5v14" />
         <path d="M5 12h14" />
-        <path d="M6 6h4" />
-        <path d="M14 18h4" />
       </>
     ),
     edit: (
