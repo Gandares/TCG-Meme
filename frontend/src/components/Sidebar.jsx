@@ -1,9 +1,9 @@
 export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true }) {
   const tabs = [
-    ["packs", "PK", "Sobres"],
-    ["collection", "CL", "Coleccion"],
-    canCreateCards ? ["creator", "+", "Crear carta"] : null,
-    canCreateCards ? ["editor", "ED", "Editar cartas"] : null,
+    ["packs", "pack", "Sobres"],
+    ["collection", "collection", "Coleccion"],
+    canCreateCards ? ["creator", "create", "Crear carta"] : null,
+    canCreateCards ? ["editor", "edit", "Editar cartas"] : null,
   ].filter(Boolean);
 
   return (
@@ -27,7 +27,7 @@ export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true
             key={view}
             onClick={() => onViewChange(view)}
           >
-            <span>{icon}</span>
+            <TabIcon name={icon} />
             {label}
           </button>
         ))}
@@ -48,5 +48,47 @@ export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true
         </div>
       </section>
     </aside>
+  );
+}
+
+function TabIcon({ name }) {
+  const icons = {
+    pack: (
+      <>
+        <path d="M7 3h10l2 4v14H5V7l2-4Z" />
+        <path d="M5 7h14" />
+        <path d="M8 11h8" />
+        <path d="M8 15h8" />
+      </>
+    ),
+    collection: (
+      <>
+        <path d="M7 5h10v14H7z" />
+        <path d="M4 8h3v11" />
+        <path d="M17 8h3v11" />
+      </>
+    ),
+    create: (
+      <>
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+        <path d="M6 6h4" />
+        <path d="M14 18h4" />
+      </>
+    ),
+    edit: (
+      <>
+        <path d="M5 19l4.5-1 8.7-8.7a2.1 2.1 0 0 0-3-3L6.5 15 5 19Z" />
+        <path d="M13.8 7.2l3 3" />
+      </>
+    ),
+  };
+
+  return (
+    <svg className="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+        {icons[name]}
+      </g>
+    </svg>
   );
 }

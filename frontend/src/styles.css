@@ -285,7 +285,10 @@ button {
   text-align: left;
 }
 
-.tab-button span {
+.tab-icon {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
   color: var(--accent-2);
 }
 
@@ -1998,8 +2001,10 @@ button {
     text-align: center;
   }
 
-  .tab-button span {
+  .tab-icon {
     font-size: 0.82rem;
+    width: 1.05rem;
+    height: 1.05rem;
   }
 
   .stats-panel {
@@ -2165,7 +2170,7 @@ button {
     white-space: normal;
   }
 
-  .tab-button span {
+  .tab-icon {
     display: block;
   }
 
