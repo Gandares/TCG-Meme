@@ -43,6 +43,10 @@ export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true
           <small>En coleccion</small>
         </div>
         <div>
+          <span>{stats.unlockedVariants}/{stats.totalVariants}</span>
+          <small>Variantes desbloqueadas</small>
+        </div>
+        <div>
           <span>{stats.openedPacks}</span>
           <small>Sobres abiertos</small>
         </div>
