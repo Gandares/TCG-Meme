@@ -2175,17 +2175,17 @@ button {
   }
 
   .stats-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.4rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.3rem;
   }
 
   .stats-panel div {
     min-width: 0;
-    padding: 0.5rem;
+    padding: 0.45rem 0.3rem;
   }
 
   .stats-panel span {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .stats-panel small {
@@ -2538,7 +2538,15 @@ button {
   }
 
   .stats-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stats-panel div {
+    padding-inline: 0.22rem;
+  }
+
+  .stats-panel span {
+    font-size: 0.92rem;
   }
 
   .tab-button {

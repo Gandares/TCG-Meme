@@ -36,19 +36,19 @@ export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true
       <section className="stats-panel" aria-label="Resumen">
         <div>
           <span>{stats.totalCards}</span>
-          <small>Cartas creadas</small>
+          <small>Creadas</small>
         </div>
         <div>
           <span>{stats.ownedCards}</span>
-          <small>En coleccion</small>
+          <small>Coleccion</small>
         </div>
         <div>
           <span>{stats.unlockedVariants}/{stats.totalVariants}</span>
-          <small>Variantes desbloqueadas</small>
+          <small>Variantes</small>
         </div>
         <div>
           <span>{stats.openedPacks}</span>
-          <small>Sobres abiertos</small>
+          <small>Sobres</small>
         </div>
       </section>
     </aside>
