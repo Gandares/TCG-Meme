@@ -231,7 +231,7 @@ export function CardDetailModal({ card, count, collection, variant = "normal", o
         </button>
 
         <div className="detail-card-preview">
-          <Card card={displayCard} artOnly={isArtOnly} />
+          <Card key={`${displayCard.id}-${displayVariant}-${isArtOnly ? "art" : "card"}`} card={displayCard} artOnly={isArtOnly} imageLoading="eager" />
         </div>
 
         <div className="detail-content">
