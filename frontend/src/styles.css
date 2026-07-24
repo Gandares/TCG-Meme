@@ -1946,7 +1946,7 @@ button {
     border-bottom: 1px solid var(--line);
     padding: 0.85rem;
     background: rgba(21, 22, 24, 0.96);
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
   }
 
   .brand {
