@@ -662,7 +662,7 @@ function applyCurrencyRegen(user) {
     return { currency: currentCurrency, updatedAt };
   }
 
-  const nextCurrency = clampCurrency(currentCurrency + earned);
+  const nextCurrency = Math.min(currencyMax, currentCurrency + earned);
   const nextUpdatedAt = nextCurrency >= currencyMax ? now : updatedAt + earned * currencyIntervalMs;
   return { currency: nextCurrency, updatedAt: nextUpdatedAt };
 }
