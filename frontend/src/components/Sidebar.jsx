@@ -3,6 +3,7 @@ export function Sidebar({ activeView, stats, onViewChange, canCreateCards = true
     ["packs", "PK", "Sobres"],
     ["collection", "CL", "Coleccion"],
     canCreateCards ? ["creator", "+", "Crear carta"] : null,
+    canCreateCards ? ["editor", "ED", "Editar cartas"] : null,
   ].filter(Boolean);
 
   return (
