@@ -6,6 +6,7 @@ import { CardEditor } from "./components/CardEditor";
 import { CollectionView } from "./components/CollectionView";
 import { PackOpening } from "./components/PackOpening";
 import { Sidebar } from "./components/Sidebar";
+import { cardVariants, getCollectionCount } from "./utils/cards";
 
 export default function App() {
   const [auth, setAuth] = useState(() => loadAuth());
@@ -79,14 +80,28 @@ export default function App() {
     return () => window.clearInterval(intervalId);
   }, [auth?.token]);
 
+  const visibleExpansions = useMemo(
+    () => expansions.filter((expansion) => joinedExpansionIds.includes(expansion.id)),
+    [expansions, joinedExpansionIds],
+  );
+  const visibleCards = useMemo(() => {
+    const visibleExpansionIds = new Set(visibleExpansions.map((expansion) => expansion.id));
+    return cards.filter((card) => visibleExpansionIds.has(card.expansionId));
+  }, [cards, visibleExpansions]);
+
   const stats = useMemo(
     () => ({
-      totalCards: cards.length,
+      totalCards: visibleCards.length,
       ownedCards: Object.values(collection).reduce((sum, count) => sum + (Number(count) || 0), 0),
+      unlockedVariants: visibleCards.reduce(
+        (sum, card) => sum + cardVariants.filter((variant) => getCollectionCount(collection, card.id, variant) > 0).length,
+        0,
+      ),
+      totalVariants: visibleCards.length * cardVariants.length,
       openedPacks,
       currency,
     }),
-    [cards, collection, currency, openedPacks],
+    [collection, currency, openedPacks, visibleCards],
   );
 
   function handleAuthenticated(nextAuth) {
@@ -176,9 +191,6 @@ export default function App() {
     return <AuthView onAuthenticated={handleAuthenticated} />;
   }
 
-  const visibleExpansions = expansions.filter((expansion) => joinedExpansionIds.includes(expansion.id));
-  const visibleExpansionIds = new Set(visibleExpansions.map((expansion) => expansion.id));
-  const visibleCards = cards.filter((card) => visibleExpansionIds.has(card.expansionId));
   const canCreateCards = visibleExpansions.length > 0;
   const currentView = (activeView === "creator" || activeView === "editor") && !canCreateCards ? "packs" : activeView;
 
