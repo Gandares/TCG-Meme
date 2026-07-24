@@ -1932,6 +1932,7 @@ button {
 @media (max-width: 860px) {
   .app-shell {
     grid-template-columns: 1fr;
+    padding-bottom: 4.9rem;
   }
 
   .sidebar {
@@ -1973,11 +1974,32 @@ button {
   }
 
   .tabs {
-    grid-template-columns: repeat(3, 1fr);
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(4.75rem, 1fr));
+    gap: 0.35rem;
+    padding: 0.55rem max(0.65rem, env(safe-area-inset-left)) max(0.55rem, env(safe-area-inset-bottom)) max(0.65rem, env(safe-area-inset-right));
+    border-top: 1px solid var(--line);
+    background: rgba(21, 22, 24, 0.96);
+    backdrop-filter: blur(14px);
   }
 
   .tab-button {
+    display: grid;
     justify-content: center;
+    justify-items: center;
+    gap: 0.22rem;
+    min-height: 3.2rem;
+    padding: 0.35rem 0.25rem;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .tab-button span {
+    font-size: 0.82rem;
   }
 
   .stats-panel {
