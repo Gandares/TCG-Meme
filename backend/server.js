@@ -931,12 +931,18 @@ function updateCard(cardId, payload, user) {
     throw new Error("Ya existe una carta con ese nombre en esta expansion.");
   }
 
+  const previousImages = [currentCard.image, currentCard.alternativeImage];
+  const nextImage = payload.image ? saveImage(currentCard.id, payload.image) : currentCard.image;
+  const nextAlternativeImage = payload.alternativeImage
+    ? saveImage(currentCard.id, payload.alternativeImage, "alternative")
+    : currentCard.alternativeImage;
+
   const updatedCard = {
     ...currentCard,
     name,
     type: "",
-    image: payload.image ? saveImage(currentCard.id, payload.image) : currentCard.image,
-    alternativeImage: payload.alternativeImage ? saveImage(currentCard.id, payload.alternativeImage, "alternative") : currentCard.alternativeImage,
+    image: nextImage,
+    alternativeImage: nextAlternativeImage,
     description,
     flavor: cleanText(payload.flavor, 90),
     author: currentCard.author,
@@ -947,6 +953,7 @@ function updateCard(cardId, payload, user) {
 
   cards[index] = updatedCard;
   writeCards(cards);
+  cleanupReplacedImages(previousImages, cards);
   return attachExpansions([updatedCard])[0];
 }
 
@@ -1005,6 +1012,35 @@ function saveImageBuffer(id, buffer, mimeType, suffix = "") {
 
 function imageFilenameBase(id, suffix = "") {
   return suffix ? `${id}-${cleanSlug(suffix)}` : id;
+}
+
+function cleanupReplacedImages(imagePaths, cards) {
+  for (const imagePath of new Set(imagePaths.filter(Boolean))) {
+    if (isImageReferenced(cards, imagePath)) {
+      continue;
+    }
+
+    deleteUploadImage(imagePath);
+  }
+}
+
+function isImageReferenced(cards, imagePath) {
+  return cards.some((card) => card.image === imagePath || card.alternativeImage === imagePath);
+}
+
+function deleteUploadImage(imagePath) {
+  const normalizedPath = String(imagePath || "").replace(/^\/+/, "");
+  if (!normalizedPath.startsWith("assets/uploads/")) {
+    return;
+  }
+
+  const relativeUploadPath = normalizedPath.replace(/^assets\/uploads\/?/, "");
+  const filePath = path.normalize(path.join(uploadsDir, relativeUploadPath));
+  if (!isPathInside(filePath, uploadsDir)) {
+    return;
+  }
+
+  fs.rm(filePath, { force: true }, () => {});
 }
 
 function serveAsset(urlPath, response) {
