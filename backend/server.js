@@ -864,6 +864,7 @@ function parseMultipart(buffer, boundary) {
 function createCard(payload, user) {
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 110);
+  const rarity = normalizeRarity(payload.rarity);
   const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
   if (!userHasExpansion(normalizeUserCollectionEntities(user), expansion.id)) {
     throw new Error("No te has unido a esta expansion.");
@@ -895,7 +896,7 @@ function createCard(payload, user) {
     uid,
     name,
     type: "",
-    rarity: normalizeRarity(payload.rarity),
+    rarity,
     expansionId: expansion.id,
     expansion,
     image: saveImage(id, payload.image),
@@ -921,6 +922,7 @@ function updateCard(cardId, payload, user) {
 
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 110);
+  const rarity = normalizeRarity(payload.rarity || currentCard.rarity);
   if (!name) {
     throw new Error("El titulo es obligatorio.");
   }
@@ -946,7 +948,7 @@ function updateCard(cardId, payload, user) {
     description,
     flavor: cleanText(payload.flavor, 90),
     author: currentCard.author,
-    rarity: currentCard.rarity,
+    rarity,
     expansionId: currentCard.expansionId,
     expansion: currentCard.expansion,
   };
