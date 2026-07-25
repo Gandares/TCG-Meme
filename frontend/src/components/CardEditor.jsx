@@ -4,6 +4,11 @@ import { resizeImageFile, withCardVariant } from "../utils/cards";
 import { Card } from "./Card";
 import { CustomSelect } from "./CustomSelect";
 
+const rarityOptions = ["Comun", "Rara", "Epica", "Legendaria"].map((rarity) => ({
+  value: rarity,
+  label: rarity,
+}));
+
 export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) {
   const editableCards = useMemo(
     () => cards.filter((card) => String(card.author || "").toLowerCase() === String(user?.username || "").toLowerCase()),
@@ -46,6 +51,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
       {
         ...selectedCard,
         name: form.name || selectedCard.name,
+        rarity: form.rarity || selectedCard.rarity,
         image: form.image || selectedCard.image,
         alternativeImage: form.alternativeImage || selectedCard.alternativeImage || selectedCard.image,
         description: form.description || selectedCard.description,
@@ -96,6 +102,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
     try {
       const savedCard = await onUpdateCard(selectedCard.id, {
         name: form.name.trim(),
+        rarity: form.rarity,
         description: form.description.trim(),
         flavor: form.flavor.trim(),
         imageFile: form.imageFile,
@@ -140,7 +147,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
             </label>
             <label>
               Rareza
-              <input type="text" value={selectedCard?.rarity || ""} readOnly />
+              <CustomSelect label="Rareza" options={rarityOptions} value={form.rarity} onChange={(value) => updateField("rarity", value)} />
             </label>
             <label>
               Expansion
@@ -201,6 +208,7 @@ export function CardEditor({ user, cards = [], expansions = [], onUpdateCard }) 
 function createForm(card) {
   return {
     name: card?.name || "",
+    rarity: card?.rarity || "Comun",
     image: card?.image ? assetUrl(card.image) : "",
     imageFile: null,
     alternativeImage: card?.alternativeImage ? assetUrl(card.alternativeImage) : assetUrl(card?.image || ""),

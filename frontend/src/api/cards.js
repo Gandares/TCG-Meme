@@ -167,6 +167,7 @@ export async function createCard(card, token) {
 export async function updateCard(cardId, card, token) {
   const body = new FormData();
   body.set("name", card.name);
+  body.set("rarity", card.rarity);
   body.set("description", card.description);
   body.set("flavor", card.flavor);
   if (card.imageFile) {

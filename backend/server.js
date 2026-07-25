@@ -705,9 +705,9 @@ function resolveRecentPulls(cardIds) {
 function weightedRandomCard(cards) {
   const weights = {
     Comun: 61,
-    Rara: 28,
+    Rara: 29,
     Epica: 9,
-    Legendaria: 2,
+    Legendaria: 1,
   };
   const candidates = cards.flatMap((card) => {
     return [withCardVariant(card, "normal"), withCardVariant(card, "holo"), withCardVariant(card, "alternative")];
@@ -864,6 +864,7 @@ function parseMultipart(buffer, boundary) {
 function createCard(payload, user) {
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 110);
+  const rarity = normalizeRarity(payload.rarity);
   const expansion = findExpansion(payload.expansionId || defaultExpansion.id);
   if (!userHasExpansion(normalizeUserCollectionEntities(user), expansion.id)) {
     throw new Error("No te has unido a esta expansion.");
@@ -895,7 +896,7 @@ function createCard(payload, user) {
     uid,
     name,
     type: "",
-    rarity: normalizeRarity(payload.rarity),
+    rarity,
     expansionId: expansion.id,
     expansion,
     image: saveImage(id, payload.image),
@@ -921,6 +922,7 @@ function updateCard(cardId, payload, user) {
 
   const name = cleanText(payload.name, 28);
   const description = cleanText(payload.description, 110);
+  const rarity = normalizeRarity(payload.rarity || currentCard.rarity);
   if (!name) {
     throw new Error("El titulo es obligatorio.");
   }
@@ -931,22 +933,29 @@ function updateCard(cardId, payload, user) {
     throw new Error("Ya existe una carta con ese nombre en esta expansion.");
   }
 
+  const previousImages = [currentCard.image, currentCard.alternativeImage];
+  const nextImage = payload.image ? saveImage(currentCard.id, payload.image) : currentCard.image;
+  const nextAlternativeImage = payload.alternativeImage
+    ? saveImage(currentCard.id, payload.alternativeImage, "alternative")
+    : currentCard.alternativeImage;
+
   const updatedCard = {
     ...currentCard,
     name,
     type: "",
-    image: payload.image ? saveImage(currentCard.id, payload.image) : currentCard.image,
-    alternativeImage: payload.alternativeImage ? saveImage(currentCard.id, payload.alternativeImage, "alternative") : currentCard.alternativeImage,
+    image: nextImage,
+    alternativeImage: nextAlternativeImage,
     description,
     flavor: cleanText(payload.flavor, 90),
     author: currentCard.author,
-    rarity: currentCard.rarity,
+    rarity,
     expansionId: currentCard.expansionId,
     expansion: currentCard.expansion,
   };
 
   cards[index] = updatedCard;
   writeCards(cards);
+  cleanupReplacedImages(previousImages, cards);
   return attachExpansions([updatedCard])[0];
 }
 
@@ -1005,6 +1014,35 @@ function saveImageBuffer(id, buffer, mimeType, suffix = "") {
 
 function imageFilenameBase(id, suffix = "") {
   return suffix ? `${id}-${cleanSlug(suffix)}` : id;
+}
+
+function cleanupReplacedImages(imagePaths, cards) {
+  for (const imagePath of new Set(imagePaths.filter(Boolean))) {
+    if (isImageReferenced(cards, imagePath)) {
+      continue;
+    }
+
+    deleteUploadImage(imagePath);
+  }
+}
+
+function isImageReferenced(cards, imagePath) {
+  return cards.some((card) => card.image === imagePath || card.alternativeImage === imagePath);
+}
+
+function deleteUploadImage(imagePath) {
+  const normalizedPath = String(imagePath || "").replace(/^\/+/, "");
+  if (!normalizedPath.startsWith("assets/uploads/")) {
+    return;
+  }
+
+  const relativeUploadPath = normalizedPath.replace(/^assets\/uploads\/?/, "");
+  const filePath = path.normalize(path.join(uploadsDir, relativeUploadPath));
+  if (!isPathInside(filePath, uploadsDir)) {
+    return;
+  }
+
+  fs.rm(filePath, { force: true }, () => {});
 }
 
 function serveAsset(urlPath, response) {

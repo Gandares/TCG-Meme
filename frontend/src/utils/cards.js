@@ -1,8 +1,8 @@
 export const rarityWeights = {
   Comun: 61,
-  Rara: 28,
+  Rara: 29,
   Epica: 9,
-  Legendaria: 2,
+  Legendaria: 1,
 };
 
 export const rarityOrder = {
