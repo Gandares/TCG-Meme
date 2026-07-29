@@ -255,11 +255,19 @@ export function PackOpening({
         <h3>Ultimas cartas</h3>
         {recentPulls.length ? (
           <div className="recent-pulls-track" aria-live="polite">
-            {recentPulls.map((card, index) => (
-              <div className="recent-pull-card" key={`${card.id}-${card.variant || "normal"}-${index}`}>
-                <Card card={card} />
-              </div>
-            ))}
+            {recentPulls.map((card, index) => {
+              const displayCard = withCardVariant(card, card.variant || "normal");
+              return (
+                <button
+                  className="recent-pull-card"
+                  type="button"
+                  key={`${card.id}-${card.variant || "normal"}-${index}`}
+                  onClick={() => setSelectedCard(displayCard)}
+                >
+                  <Card card={displayCard} enableTilt={false} />
+                </button>
+              );
+            })}
           </div>
         ) : (
           <p className="empty-state">Abre un sobre para ver aqui tus ultimas cartas.</p>
