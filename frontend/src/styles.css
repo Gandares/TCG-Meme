@@ -712,6 +712,12 @@ button {
 .recent-pull-card {
   flex: 0 0 9.5rem;
   scroll-snap-align: start;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  touch-action: pan-x;
 }
 
 .recent-pull-card .tcg-card {
